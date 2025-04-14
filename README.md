@@ -1,61 +1,82 @@
-# Gigi's Personal Website
+# Gigi Glitz - Ultra-Modern Web Experience
 
-A modern, animated website showcasing Gigi's expertise in crypto, fitness, and personal development.
+A hyper-contemporary, minimalistic, and functional Next.js website for Gigi Glitz, featuring advanced animations, glitch effects, and an immersive user experience.
 
-## Features
+## 🚀 Features
 
-- Modern, responsive design with beautiful animations
-- Interactive components with hover effects
-- Optimized performance with Next.js
-- Stunning visual elements using Framer Motion
-- Fully typed with TypeScript
+- **Cutting-edge Design**: Embrace the vaporwave aesthetic with modern minimalistic UI
+- **Reactive Animations**: Powered by Framer Motion and Three.js
+- **Interactive Components**: Quiz, animated cards, and custom cursor effects
+- **Fully Responsive**: Perfect experience across all devices
+- **Performance Optimized**: Fast loading and smooth animations
 
-## Getting Started
+## 💻 Tech Stack
 
-1. Install dependencies:
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion, GSAP
+- **3D Effects**: Three.js with React Three Fiber
+- **Deployment**: Vercel
+
+## 🛠️ Installation & Setup
+
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd gigi-website
+   ```
+
+2. Install dependencies
+   ```bash
+   npm install
+   ```
+
+3. Run the development server
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 📤 Deployment
+
+The site is configured for seamless deployment on Vercel. Use the following command to deploy:
+
 ```bash
-npm install
-# or
-yarn install
+vercel
 ```
 
-2. Run the development server:
+Or for production deployment:
+
 ```bash
-npm run dev
-# or
-yarn dev
+vercel --prod
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📝 Project Structure
 
-## Tech Stack
+- `/src/components/ui`: Reusable UI components (Header, Footer, etc.)
+- `/src/components/sections`: Main page sections (Hero, About, etc.)
+- `/src/components/animations`: Animation components (GlitchBackground, ShinyText, etc.)
+- `/public/images`: Static images and assets
 
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Framer Motion
+## 🎨 Customization
 
-## Project Structure
+- Color scheme can be modified in `/src/app/globals.css`
+- Fonts can be changed in `/src/app/layout.tsx`
+- Content can be updated in respective section components
 
-```
-src/
-  ├── app/              # Next.js app router files
-  ├── components/       # React components
-  │   ├── backgrounds/  # Background components like Orb
-  │   └── text-animations/ # Text animation components
-  └── styles/          # Global styles
-```
+## 👩‍💻 Development
 
-## Development
+To add new sections or features:
 
-The project uses:
-- TypeScript for type safety
-- ESLint for code linting
-- Prettier for code formatting
-- Tailwind CSS for styling
-- Framer Motion for animations
+1. Create component in appropriate directory
+2. Import and add to main page in `/src/app/page.tsx`
+3. Add any necessary styles using Tailwind or in `/src/app/globals.css`
 
-## License
+## 📄 License
 
-MIT 
+[MIT](LICENSE)
+
+---
+
+Created with ✨ for Gigi Glitz | Bold Bodies. Sharp Minds. Digital Queens.
