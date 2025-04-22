@@ -1,0 +1,9 @@
+Hero Section:
+/public/images/hero/gigi-avatar.png - Main avatar image
+Guides Section:
+/public/images/guides/confidence-guide.jpg - Cover for the fitness guide
+/public/images/guides/crypto-guide.jpg - Cover for the crypto guide
+About Section (if needed):
+Various team/about images would go in /public/images/about/
+Media Section:
+Media content images would go in /public/images/media/

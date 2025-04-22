@@ -1,35 +1,52 @@
 {
-  "name": "gigi-website",
+  "name": "gigiw",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "deploy": "vercel --prod"
+    "lint": "next lint"
   },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MustBeSimo/gigiW.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MustBeSimo/gigiW/issues"
+  },
+  "homepage": "https://github.com/MustBeSimo/gigiW#readme",
+  "description": "",
   "dependencies": {
-    "@react-three/drei": "^10.0.6",
-    "@react-three/fiber": "^9.1.2",
-    "@react-three/postprocessing": "^3.0.4",
-    "@types/three": "^0.175.0",
-    "framer-motion": "^12.7.1",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/supabase-js": "^2.49.4",
+    "@stripe/stripe-js": "^1.49.0",
+    "@types/js-cookie": "^3.0.6",
+    "@types/node": "20.5.7",
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7",
+    "@types/sharp": "^0.31.1",
+    "autoprefixer": "10.4.15",
+    "clsx": "^2.1.1",
+    "eslint": "8.48.0",
+    "framer-motion": "^10.18.0",
     "gsap": "^3.12.7",
-    "next": "15.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "three": "^0.175.0"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "js-cookie": "^3.0.5",
+    "next": "13.4.19",
+    "next-themes": "^0.2.1",
+    "postcss": "8.4.29",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "sharp": "^0.34.1",
+    "stripe": "^12.0.0",
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss": "3.3.3",
+    "typescript": "5.2.2"
   }
 }

@@ -1,0 +1,28 @@
+.rainbow-border {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 1.25rem;
+  padding: 2px;
+  background: linear-gradient(270deg, #a259ff, #00e1ff, #ff00cc, #a259ff);
+  background-size: 600% 600%;
+  animation: rainbow-border-move 4s linear infinite;
+  box-sizing: border-box;
+  /* Mask out the center so only border is visible */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+@keyframes rainbow-border-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
