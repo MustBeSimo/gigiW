@@ -12,12 +12,12 @@ export async function POST(req: Request) {
   const userId = session.user.id;
 
   // Fetch current balance or initialize
-  let { data: row, error } = await supabase
-    .from('user_balances')
-    .select<{ balance: number }>('balance')
+  let { data: row, error: balanceError } = await supabase
+    .from<{ balance: number }>('user_balances')
+    .select('balance')
     .eq('user_id', userId)
     .single();
-  if (error && error.code === 'PGRST116') {
+  if (balanceError && balanceError.code === 'PGRST116') {
     const insertRes = await supabase
       .from('user_balances')
       .insert({ user_id: userId })
@@ -26,8 +26,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: insertRes.error.message }, { status: 500 });
     }
     row = insertRes.data;
-  } else if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } else if (balanceError) {
+    return NextResponse.json({ error: balanceError.message }, { status: 500 });
   }
 
   // Check balance
@@ -37,10 +37,10 @@ export async function POST(req: Request) {
 
   // Decrement balance
   const dec = await supabase
-    .from('user_balances')
-    .update({ balance: row!.balance - 1 })
+    .from<{ balance: number }>('user_balances')
+    .update({ balance: (row?.balance ?? 0) - 1 })
     .eq('user_id', userId)
-    .select<{ balance: number }>('balance')
+    .select('balance')
     .single();
   if (dec.error) {
     return NextResponse.json({ error: dec.error.message }, { status: 500 });
