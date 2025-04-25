@@ -32,7 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen antialiased overflow-x-hidden bg-white text-black dark:bg-black dark:text-white`}>
+      <body className={`${inter.className} min-h-screen antialiased overflow-x-hidden text-black dark:text-white`}>
         <MediaFlyThroughBackground />
         <Providers>
           {children}
