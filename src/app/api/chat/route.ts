@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   // Fetch current balance or initialize
   let { data: row, error: balanceError } = await supabase
-    .from<{ balance: number }>('user_balances')
+    .from<{ balance: number }, unknown>('user_balances')
     .select('balance')
     .eq('user_id', userId)
     .single();
@@ -31,13 +31,13 @@ export async function POST(req: Request) {
   }
 
   // Check balance
-  if (row.balance <= 0) {
+  if (!row || row.balance <= 0) {
     return NextResponse.json({ error: 'Insufficient balance' }, { status: 402 });
   }
 
   // Decrement balance
   const dec = await supabase
-    .from<{ balance: number }>('user_balances')
+    .from('user_balances')
     .update({ balance: (row?.balance ?? 0) - 1 })
     .eq('user_id', userId)
     .select('balance')
@@ -59,7 +59,13 @@ export async function POST(req: Request) {
     },
     body: JSON.stringify({
       model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
-      messages,
+      messages: [
+        {
+          role: 'system',
+          content: "You are Gigi, an empathetic, witty, and positive AI best friend. Always be supportive, concise, and a little playful. Help users with advice, answers, and encouragement. If a user is sad, cheer them up. If they're happy, celebrate with them! Never be judgmental."
+        },
+        ...messages,
+      ],
     }),
   });
   const data = await togetherRes.json();
