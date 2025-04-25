@@ -2,6 +2,12 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
+import dynamic from 'next/dynamic';
+// Dynamically load the client-only background (no SSR)
+const MediaFlyThroughBackground = dynamic(
+  () => import('@/components/MediaFlyThroughBackground'),
+  { ssr: false }
+);
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen antialiased overflow-x-hidden bg-white text-black dark:bg-black dark:text-white`}>
+        <MediaFlyThroughBackground />
         <Providers>
           {children}
         </Providers>
