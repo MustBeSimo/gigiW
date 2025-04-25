@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { Image as DreiImage } from '@react-three/drei';
+import { TextureLoader, Texture } from 'three';
 
 // List of media files (images only for now)
 const mediaFiles = [
@@ -17,21 +18,27 @@ const mediaFiles = [
   'optimized-7-group_fitness_photo_ione_girl_with_blue_hair__nja52z2s8p9gdxdw9sob_1.jpg',
   'optimized-8-pilates_girl_with_blue_hair_6efvsudxco652w1zd617_0.jpg', 'optimized-a_fit_girl_with_intense_dark_blue_hair_running_wearing_blue_activewear__hd_photo_6k172f2uv58mht875qve_0.jpg',
   'optimized-blue-hair-composition.jpg', 'optimized-blue-hair-portrait.jpg', 'optimized-empowered-woman.jpg',
-];
+].filter(f => /\.(jpe?g|png)$/i.test(f));
 
 const getRandom = (min: number, max: number) => Math.random() * (max - min) + min;
 
 function FlyingImage({ url }: { url: string }) {
   const ref = useRef<any>();
+  // load texture to get original aspect ratio
+  // @ts-ignore: loader return type
+  const texture = useLoader(TextureLoader, `/images/media/${url}`) as Texture;
+  const img = texture.image as HTMLImageElement;
+  const aspect = img.naturalWidth / img.naturalHeight;
   // Each image gets its own random initial state
   const data = useMemo(() => ({
     x: getRandom(-8, 8),
     y: getRandom(-5, 5),
     z: getRandom(-40, -10),
-    speed: getRandom(0.05, 0.2),
+    speed: getRandom(0.02, 0.15),
     rotation: getRandom(0, Math.PI * 2),
     rotSpeed: getRandom(-0.01, 0.01),
     flip: Math.random() > 0.5 ? -1 : 1,
+    scaleFactor: getRandom(1, 3),
   }), []);
 
   useFrame(() => {
@@ -43,22 +50,22 @@ function FlyingImage({ url }: { url: string }) {
       data.z = getRandom(-40, -10);
       data.x = getRandom(-8, 8);
       data.y = getRandom(-5, 5);
-      data.speed = getRandom(0.05, 0.2);
+      data.speed = getRandom(0.02, 0.15);
       data.rotation = getRandom(0, Math.PI * 2);
       data.rotSpeed = getRandom(-0.01, 0.01);
       data.flip = Math.random() > 0.5 ? -1 : 1;
+      data.scaleFactor = getRandom(1, 3);
     }
     ref.current.position.set(data.x, data.y, data.z);
     ref.current.rotation.set(0, 0, data.rotation);
-    ref.current.scale.set(data.flip, 1, 1);
+    // preserve aspect ratio and apply scaleFactor and flip
+    ref.current.scale.set(data.scaleFactor * aspect * data.flip, data.scaleFactor, 1);
   });
 
   return (
     <DreiImage
       ref={ref}
       url={`/images/media/${url}`}
-      // @ts-ignore: casting scale to tuple to satisfy TS
-      scale={[2, 2, 1] as [number, number, number]}
       transparent
       toneMapped={false}
     />
