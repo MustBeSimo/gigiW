@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   // Fetch current balance or initialize
   let { data: row, error: balanceError } = await supabase
-    .from<{ balance: number }, unknown>('user_balances')
+    .from('user_balances')
     .select('balance')
     .eq('user_id', userId)
     .single();
