@@ -38,7 +38,7 @@ function FlyingImage({ url }: { url: string }) {
     rotation: getRandom(0, Math.PI * 2),
     rotSpeed: getRandom(-0.01, 0.01),
     flip: Math.random() > 0.5 ? -1 : 1,
-    scaleFactor: getRandom(0.7, 1.5),
+    scaleFactor: getRandom(0.3, 0.7),
   }), []);
 
   useFrame(() => {
@@ -54,11 +54,12 @@ function FlyingImage({ url }: { url: string }) {
       data.rotation = getRandom(0, Math.PI * 2);
       data.rotSpeed = getRandom(-0.01, 0.01);
       data.flip = Math.random() > 0.5 ? -1 : 1;
-      data.scaleFactor = getRandom(1, 3);
+      data.scaleFactor = getRandom(0.3, 0.7);
     }
     ref.current.position.set(data.x, data.y, data.z);
     ref.current.rotation.set(0, 0, data.rotation);
     // preserve aspect ratio and apply scaleFactor; flip only horizontally
+    // scaleFactor always multiplies both axes by the same amount, so aspect ratio is preserved
     ref.current.scale.set(data.scaleFactor * aspect * (data.flip > 0 ? 1 : -1), data.scaleFactor, 1);
   });
 
