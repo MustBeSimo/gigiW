@@ -75,7 +75,7 @@ export default function HomePage() {
         <button onClick={handleBuy} className="bg-yellow-400 text-black px-4 py-2 rounded mb-4">
           Buy 200 messages
         </button>
-        <ChatCard user={user} balance={balance} />
+        <ChatCard />
       </>
     );
   }
