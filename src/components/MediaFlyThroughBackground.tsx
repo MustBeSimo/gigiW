@@ -60,7 +60,30 @@ function FlyingImage({ url }: { url: string }) {
     ref.current.rotation.set(0, 0, data.rotation);
     // preserve aspect ratio and apply scaleFactor; flip only horizontally
     // scaleFactor always multiplies both axes by the same amount, so aspect ratio is preserved
-    ref.current.scale.set(data.scaleFactor * aspect * (data.flip > 0 ? 1 : -1), data.scaleFactor, 1);
+    // Correct aspect ratio scaling: always use the same scaleFactor for x and y, then apply aspect and flip to x only
+    const baseScale = data.scaleFactor;
+    ref.current.scale.set(baseScale * aspect * data.flip, baseScale, 1);
+
+    // Calculate how close to the camera (z=5 is camera)
+    let opacity = 1;
+    let blurAmount = 0;
+    if (data.z > -2) {
+      // Fade out and blur as it gets close
+      const t = Math.min(1, (data.z + 2) / 7); // from z=-2 to z=5
+      opacity = 1 - t; // fades out to 0
+      blurAmount = t * 8; // up to 8px blur near camera
+    }
+    if (ref.current.material) {
+      ref.current.material.opacity = opacity;
+      ref.current.material.transparent = true;
+      // If material supports filter, set blur (not always available)
+      if (ref.current.material.map && ref.current.material.map.image) {
+        try {
+          ref.current.material.map.image.style && (ref.current.material.map.image.style.filter = `blur(${blurAmount}px)`);
+        } catch {}
+      }
+    }
+
   });
 
   return (
