@@ -2,8 +2,9 @@
 
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { Image as DreiImage } from '@react-three/drei';
 import { TextureLoader, Texture } from 'three';
+import { EffectComposer, DepthOfField } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 
 // List of media files (images only for now)
 const mediaFiles = [
@@ -24,12 +25,10 @@ const getRandom = (min: number, max: number) => Math.random() * (max - min) + mi
 
 function FlyingImage({ url }: { url: string }) {
   const ref = useRef<any>();
-  // load texture to get original aspect ratio
-  // @ts-ignore: loader return type
+  // @ts-ignore: loader return type mismatch
   const texture = useLoader(TextureLoader, `/images/media/${url}`) as Texture;
   const img = texture.image as HTMLImageElement;
   const aspect = img.naturalWidth / img.naturalHeight;
-  // Each image gets its own random initial state
   const data = useMemo(() => ({
     x: getRandom(-8, 8),
     y: getRandom(-5, 5),
@@ -45,7 +44,7 @@ function FlyingImage({ url }: { url: string }) {
     if (!ref.current) return;
     data.z += data.speed;
     data.rotation += data.rotSpeed;
-    // Reset if passed camera
+    // Reset when passed camera
     if (data.z > 5) {
       data.z = getRandom(-40, -10);
       data.x = getRandom(-8, 8);
@@ -58,41 +57,25 @@ function FlyingImage({ url }: { url: string }) {
     }
     ref.current.position.set(data.x, data.y, data.z);
     ref.current.rotation.set(0, 0, data.rotation);
-    // preserve aspect ratio and apply scaleFactor; flip only horizontally
-    // scaleFactor always multiplies both axes by the same amount, so aspect ratio is preserved
-    // Correct aspect ratio scaling: always use the same scaleFactor for x and y, then apply aspect and flip to x only
-    const baseScale = data.scaleFactor;
-    ref.current.scale.set(baseScale * aspect * data.flip, baseScale, 1);
-
-    // Calculate how close to the camera (z=5 is camera)
+    // Uniform scale to maintain aspect ratio
+    ref.current.scale.set(aspect * data.scaleFactor * data.flip, data.scaleFactor, 1);
+    // Fade out as it approaches the camera
     let opacity = 1;
-    let blurAmount = 0;
     if (data.z > -2) {
-      // Fade out and blur as it gets close
-      const t = Math.min(1, (data.z + 2) / 7); // from z=-2 to z=5
-      opacity = 1 - t; // fades out to 0
-      blurAmount = t * 8; // up to 8px blur near camera
+      const t = Math.min(1, (data.z + 2) / 7);
+      opacity = 1 - t;
     }
     if (ref.current.material) {
       ref.current.material.opacity = opacity;
       ref.current.material.transparent = true;
-      // If material supports filter, set blur (not always available)
-      if (ref.current.material.map && ref.current.material.map.image) {
-        try {
-          ref.current.material.map.image.style && (ref.current.material.map.image.style.filter = `blur(${blurAmount}px)`);
-        } catch {}
-      }
     }
-
   });
 
   return (
-    <DreiImage
-      ref={ref}
-      url={`/images/media/${url}`}
-      transparent
-      toneMapped={false}
-    />
+    <mesh ref={ref}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={texture} transparent toneMapped={false} depthWrite={false} />
+    </mesh>
   );
 }
 
@@ -100,10 +83,17 @@ export default function MediaFlyThroughBackground() {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: -1 }}>
       <Canvas camera={{ position: [0, 0, 5], fov: 70 }}>
-        {mediaFiles.map((url, i) => (
-          <FlyingImage key={i} url={url} />
-        ))}
-        <ambientLight intensity={1.5} />
+        <EffectComposer multisampling={0}>
+          <DepthOfField
+            focusDistance={0}
+            focalLength={0.02}
+            bokehScale={2}
+          />
+          {mediaFiles.map((url, i) => (
+            <FlyingImage key={i} url={url} />
+          ))}
+          <ambientLight intensity={1.5} />
+        </EffectComposer>
       </Canvas>
     </div>
   );
