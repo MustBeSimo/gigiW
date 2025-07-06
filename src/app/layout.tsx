@@ -43,7 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/ios/192.png" />
         <link rel="apple-touch-startup-image" href="/splash.png" />
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-XZ0EXKEFCS"
+          src="https://www.googletagmanager.com/gtag/js?id=G-31WZL1Q5HX"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -51,7 +51,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-XZ0EXKEFCS');
+            gtag('config', 'G-31WZL1Q5HX');
           `}
         </Script>
       </head>
