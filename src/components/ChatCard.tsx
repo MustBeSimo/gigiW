@@ -275,7 +275,7 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
               ) : (
                 <div className="p-4 border-t text-center bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
-                    Sign in to continue chatting and get <span className="font-bold">50 free messages!</span>
+                    Sign in to continue chatting and get <span className="font-bold">20 free messages!</span>
                   </span>
                 </div>
               )}

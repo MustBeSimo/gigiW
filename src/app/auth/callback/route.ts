@@ -69,7 +69,7 @@ export async function GET(request: Request) {
         .from('user_balances')
         .upsert({
           user_id: session.user.id,
-          balance: 50, // Give 50 free messages to new users
+          balance: 20, // Give 20 free messages to new users
           voice_time_remaining: 300, // Give 5 minutes (300 seconds) of voice chat trial
           updated_at: new Date().toISOString(),
         });

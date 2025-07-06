@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         .upsert(
           {
             user_id: session.user.id,
-            balance: 50, // Give 50 free messages to new users
+            balance: 20, // Give 20 free messages to new users
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }

@@ -9,7 +9,7 @@ Widget initialization is handled with proper cleanup and error handling
 
 Text Chat System:
 Implemented in the Chat and SpotlightChat components
-New users get 50 free messages (tracked in user_balances table)
+New users get 20 free messages (tracked in user_balances table)
 Real-time balance updates through Supabase subscriptions
 UserBalance component shows remaining credits
 
@@ -24,7 +24,7 @@ Real-time subscription updates through Supabase channels
 
 Authentication Flow:
 Handles user signup/login
-Initializes user profile and balance (50 free messages)
+Initializes user profile and balance (20 free messages)
 Sets up subscription tracking
 Manages trial eligibility
 The implementation provides a robust system for handling both voice and text chat features, with separate trial/subscription mechanisms for each. The code includes proper error handling, real-time updates, and a clean separation of concerns between components.

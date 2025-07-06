@@ -697,7 +697,7 @@ export default function MoodCheckinCard() {
                 <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-2">With your free account:</h4>
                 <ul className="text-sm text-emerald-800 dark:text-emerald-200 space-y-1">
                   <li>• 50 mood check-ins</li>
-                  <li>• 50 chat messages</li>
+                  <li>• 20 chat messages</li>
                   <li>• Personalized insights</li>
                   <li>• Progress tracking</li>
                   <li>• CBT techniques</li>

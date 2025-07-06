@@ -167,42 +167,42 @@ export default function HomePage() {
     switch (avatarId) {
       case 'gigi':
         return {
-          gradient: 'from-pink-200 to-purple-200',
+          gradient: 'from-pink-400 to-purple-400',
           primaryColor: 'pink',
           accentColor: 'purple',
-          bgPrimary: 'bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
-          borderColor: 'border-pink-200 dark:border-pink-600',
-          textColor: 'text-pink-900 dark:text-pink-100',
+          bgPrimary: 'bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40',
+          borderColor: 'border-pink-400 dark:border-pink-500',
+          textColor: 'text-pink-800 dark:text-pink-200',
           buttonColor: 'from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
         };
       case 'vee':
         return {
-          gradient: 'from-blue-200 to-cyan-200',
+          gradient: 'from-blue-400 to-cyan-400',
           primaryColor: 'blue',
           accentColor: 'cyan',
-          bgPrimary: 'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20',
-          borderColor: 'border-blue-200 dark:border-blue-600',
-          textColor: 'text-blue-900 dark:text-blue-100',
+          bgPrimary: 'bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40',
+          borderColor: 'border-blue-400 dark:border-blue-500',
+          textColor: 'text-blue-800 dark:text-blue-200',
           buttonColor: 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
         };
       case 'lumo':
         return {
-          gradient: 'from-teal-200 to-emerald-200',
+          gradient: 'from-teal-400 to-emerald-400',
           primaryColor: 'teal',
           accentColor: 'emerald',
-          bgPrimary: 'bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20',
-          borderColor: 'border-teal-200 dark:border-teal-600',
-          textColor: 'text-teal-900 dark:text-teal-100',
+          bgPrimary: 'bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-900/40 dark:to-emerald-900/40',
+          borderColor: 'border-teal-400 dark:border-teal-500',
+          textColor: 'text-teal-800 dark:text-teal-200',
           buttonColor: 'from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600'
         };
       default:
         return {
-          gradient: 'from-pink-200 to-purple-200',
+          gradient: 'from-pink-400 to-purple-400',
           primaryColor: 'pink',
           accentColor: 'purple',
-          bgPrimary: 'bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
-          borderColor: 'border-pink-200 dark:border-pink-600',
-          textColor: 'text-pink-900 dark:text-pink-100',
+          bgPrimary: 'bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40',
+          borderColor: 'border-pink-400 dark:border-pink-500',
+          textColor: 'text-pink-800 dark:text-pink-200',
           buttonColor: 'from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
         };
     }
@@ -267,13 +267,13 @@ export default function HomePage() {
               <div className="flex items-center gap-2 sm:gap-3 justify-end">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 text-sm font-medium"
+                  className="p-2.5 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200"
                   title="Weather & Horoscope"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" opacity="0.4"/>
                   </svg>
-                  <span className="hidden sm:inline">Weather</span>
                 </button>
                 
                 {user && (
@@ -300,111 +300,7 @@ export default function HomePage() {
             />
           </section>
 
-          {/* Pricing Section - Transparent */}
-          <section className="mb-12 lg:mb-16">
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
-                Choose Your Plan
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Free Plan */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Free Trial</h3>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$0</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">50 messages included</p>
-                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Basic CBT guidance</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Mood check-ins</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>3 AI companions</span>
-                    </li>
-                  </ul>
-                </div>
 
-                {/* Plus Plan */}
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border-2 border-emerald-200 dark:border-emerald-600 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium">
-                    Most Popular
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Plus</h3>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$4.99</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">200 messages</p>
-                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Advanced CBT sessions</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Mood trend analysis</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Streak tracking</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Priority support</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Pro Plan */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Pro</h3>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$9.99</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Unlimited messages</p>
-                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Everything in Plus</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Voice conversations</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Custom exercises</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>Progress reports</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
 
           {/* Upsell Banners - Contextual */}
           <UpsellBanner 
@@ -489,6 +385,90 @@ export default function HomePage() {
                 <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-64 rounded-lg"></div>}>
                   <GuideCard />
                 </Suspense>
+              </div>
+            </div>
+          </section>
+
+          {/* Pricing Section - Before FAQ */}
+          <section className="mb-12 lg:mb-16">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                Choose Your Plan
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {/* Free Plan */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 h-fit">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Free Trial</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$0</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">20 messages included</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Basic CBT guidance</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>5 Mood check-ins and reports</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>3 AI companions</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Plus Plan */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border-2 border-emerald-200 dark:border-emerald-600 relative h-fit">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    Most Popular
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Plus</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$4.99</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">200 messages + 30 mood check-ins and reports</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Advanced CBT sessions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Mood trend analysis</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Priority support</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">Valid until expires</p>
+                </div>
+
+                {/* Pro Plan */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 h-fit">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Pro</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$9.99</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Unlimited messages and mood check-ins and reports</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Everything in Plus</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">Valid one month</p>
+                </div>
               </div>
             </div>
           </section>

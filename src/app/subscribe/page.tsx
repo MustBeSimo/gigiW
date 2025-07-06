@@ -180,7 +180,7 @@ export default function SubscribePage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-blue-600 dark:text-blue-400">✓</span>
-              <span className="text-gray-700 dark:text-gray-300">50 chat messages</span>
+                                      <span className="text-gray-700 dark:text-gray-300">20 chat messages</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-blue-600 dark:text-blue-400">✓</span>
