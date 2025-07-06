@@ -20,8 +20,8 @@ export const BREAKPOINTS = {
 } as const;
 
 export const SOCIAL_LINKS = [
-  { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/heyitsgigiai' },
-  { icon: 'twitter', color: 'blue', url: 'https://x.com/HeyItsGigiAI' },
+  { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/mind_gleam_app/' },
+  { icon: 'twitter', color: 'blue', url: 'https://x.com/mindgleamai' },
   { icon: 'tiktok', color: 'purple', url: 'https://www.tiktok.com/@heyitsgigiai' },
-  { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/Gigi_Glitz/' }
+  { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/HeyItsGigiAi/' }
 ] as const; 

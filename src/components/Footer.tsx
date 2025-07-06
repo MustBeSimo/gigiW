@@ -14,10 +14,10 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/heyitsgigiai' },
+    { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/heyitsgigiai/' },
     { icon: 'twitter', color: 'blue', url: 'https://x.com/HeyItsGigiAI' },
     { icon: 'tiktok', color: 'purple', url: 'https://www.tiktok.com/@heyitsgigiai' },
-    { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/Gigi_Glitz/' }
+    { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/HeyItsGigiAi/' }
   ];
 
   const quickLinks = [
@@ -40,7 +40,7 @@ export default function Footer() {
               viewport={{ once: true }}
               className="text-2xl font-bold mb-4"
             >
-              Gigi Glitz
+              Mind Gleam
             </motion.h3>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -49,7 +49,7 @@ export default function Footer() {
               transition={{ delay: 0.2 }}
               className="text-gray-400 mb-6"
             >
-              An AI-powered influencer, digital muse, and virtual companion designed for Gen Z and beyond. Explore the future of ethical AI, discover empowering self-care tools, and follow Gigi on her journey as the world's first unfiltered AI lifestyle avatar.
+              Mind Gleam provides AI-powered educational wellness content and CBT-inspired techniques to support your mental well-being journey.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -151,10 +151,10 @@ export default function Footer() {
           transition={{ delay: 0.6 }}
           className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center"
         >
-          <p className="text-gray-400 mb-4 md:mb-0">© 2024 Gigi Glitz. All rights reserved.</p>
+          <p className="text-gray-400 mb-4 md:mb-0">© 2025 Mind Gleam. All rights reserved.</p>
           <div className="flex space-x-6">
-            <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">Terms of Service</a>
+            <a href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300">Privacy Policy</a>
+            <a href="/terms" className="text-gray-400 hover:text-white transition-colors duration-300">Terms of Service</a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">Cookie Policy</a>
           </div>
         </motion.div>

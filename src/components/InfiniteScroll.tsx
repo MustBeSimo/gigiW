@@ -165,12 +165,27 @@ export default function InfiniteScroll({
           margin-top: ${negativeMargin};
         }
       `}</style>
-      <div className="infinite-scroll-wrapper" ref={wrapperRef}>
+      <div 
+        className="infinite-scroll-wrapper" 
+        ref={wrapperRef}
+        onClick={(e) => {
+          // Prevent fullscreen behavior on mobile
+          if (e.target !== e.currentTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         <div
           className="infinite-scroll-container"
           ref={containerRef}
           style={{
             transform: getTiltTransform(),
+          }}
+          onClick={(e) => {
+            // Prevent fullscreen behavior on mobile
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           {items.map((item, i) => (

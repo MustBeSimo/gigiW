@@ -23,9 +23,9 @@ export default function About() {
 
   const features = [
     { title: 'Emotional Intelligence', description: 'Advanced empathy algorithms for meaningful conversations', icon: '❤️' },
-    { title: 'Style Expertise', description: 'Curated fashion and lifestyle recommendations', icon: '👗' },
-    { title: 'Digital Wellness', description: 'Holistic approach to online well-being', icon: '🧘‍♀️' },
-    { title: 'Web3 Knowledge', description: 'Up-to-date insights on digital trends', icon: '🌐' },
+    { title: 'Thought-Shift Coaching', description: 'Evidence-based techniques for transforming difficult thoughts', icon: '🧠' },
+    { title: 'Mental Wellness', description: 'Holistic approach to emotional well-being and resilience', icon: '🧘‍♀️' },
+    { title: 'Private Journaling', description: 'Secure, confidential space for self-reflection and growth', icon: '📝' },
   ];
 
   return (
@@ -43,12 +43,12 @@ export default function About() {
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             The Future of
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
-              Digital Companionship
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              Mental Wellness Support
             </span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Meet Gigi, your AI companion designed to bring authenticity and meaningful connection to the digital world.
+            Meet Gigi, your AI Thought-Coach designed to provide evidence-based support for your mental wellness journey.
           </p>
         </motion.div>
 
@@ -121,11 +121,11 @@ export default function About() {
         >
           <motion.a
             href="#chat"
-            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-shadow"
+            className="inline-flex items-center px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Start Your Journey
+            Start Your Wellness Journey
             <motion.span
               className="ml-2"
               animate={{ x: [0, 4, 0] }}

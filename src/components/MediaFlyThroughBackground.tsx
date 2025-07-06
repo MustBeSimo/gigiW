@@ -3,8 +3,7 @@
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader, Texture } from 'three';
-import { EffectComposer, DepthOfField } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import * as THREE from 'three';
 
 // List of media files (images only for now)
 const mediaFiles = [
@@ -25,26 +24,66 @@ const getRandom = (min: number, max: number) => Math.random() * (max - min) + mi
 
 function FlyingImage({ url }: { url: string }) {
   const ref = useRef<any>();
-  // @ts-ignore: loader return type mismatch
-  const texture = useLoader(TextureLoader, `/images/media/${url}`) as Texture;
-  const img = texture.image as HTMLImageElement;
-  const aspect = img.naturalWidth / img.naturalHeight;
+  const mounted = useRef(true);
+  // Type workaround: TextureLoader is not assignable to LoaderProto in @react-three/fiber v8 + three 0.152
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const texture = useLoader(TextureLoader as unknown as any, `/images/media/${url}`, (loader) => {
+    // Enable texture compression and mipmaps for better performance
+    const tex = loader.load(`/images/media/${url}`);
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipMapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    return tex;
+  }) as Texture;
+  const [aspect, setAspect] = React.useState<number | null>(null);
+
+  // Ensure texture fills mesh, no cropping
+  React.useEffect(() => {
+    if (texture) {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(1, 1);
+      texture.offset.set(0, 0);
+    }
+  }, [texture]);
+
+  React.useEffect(() => {
+    const img = texture.image as HTMLImageElement;
+    function updateAspect() {
+      if (mounted.current && img && img.naturalWidth && img.naturalHeight) {
+        const asp = img.naturalWidth / img.naturalHeight;
+        setAspect(asp);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[FlyingImage] url: ${url}, naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight}, aspect: ${asp}`);
+        }
+      }
+    }
+    if (img && img.complete) {
+      updateAspect();
+    } else if (img) {
+      img.onload = updateAspect;
+    }
+
+    return () => {
+      mounted.current = false;
+    };
+  }, [texture, url]);
+
   const data = useMemo(() => ({
-    x: getRandom(-8, 8),
-    y: getRandom(-5, 5),
-    z: getRandom(-40, -10),
-    speed: getRandom(0.02, 0.15),
-    rotation: getRandom(0, Math.PI * 2),
-    rotSpeed: getRandom(-0.01, 0.01),
-    flip: Math.random() > 0.5 ? -1 : 1,
-    scaleFactor: getRandom(0.3, 0.7),
+    x: Math.random() * 8 - 4,
+    y: Math.random() * 5 - 2.5,
+    z: Math.random() * 20 - 10,
+    rotation: Math.random() * Math.PI * 2,
+    speed: 0.03 + Math.random() * 0.01,
+    rotSpeed: 0.005 + Math.random() * 0.002,
+    scaleFactor: 2.0 + Math.random() * 0.7,
+    flip: Math.random() > 0.5 ? 1 : -1,
   }), []);
 
   useFrame(() => {
-    if (!ref.current) return;
+    if (!ref.current || !aspect || !mounted.current) return;
     data.z += data.speed;
     data.rotation += data.rotSpeed;
-    // Reset when passed camera
     if (data.z > 5) {
       data.z = getRandom(-40, -10);
       data.x = getRandom(-8, 8);
@@ -57,9 +96,7 @@ function FlyingImage({ url }: { url: string }) {
     }
     ref.current.position.set(data.x, data.y, data.z);
     ref.current.rotation.set(0, 0, data.rotation);
-    // Uniform scale to maintain aspect ratio
-    ref.current.scale.set(aspect * data.scaleFactor * data.flip, data.scaleFactor, 1);
-    // Fade out as it approaches the camera
+    ref.current.scale.set(data.scaleFactor * data.flip * aspect, data.scaleFactor, 1);
     let opacity = 1;
     if (data.z > -2) {
       const t = Math.min(1, (data.z + 2) / 7);
@@ -71,30 +108,21 @@ function FlyingImage({ url }: { url: string }) {
     }
   });
 
+  if (!aspect || !isFinite(aspect) || aspect <= 0) return null;
+
   return (
-    <mesh ref={ref}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={texture} transparent toneMapped={false} depthWrite={false} />
+    <mesh ref={ref} key={aspect}>
+      <planeGeometry args={[1.4, 1.4]} key={aspect} />
+      <meshBasicMaterial 
+        map={texture} 
+        transparent 
+        toneMapped={false} 
+        depthWrite={false} 
+        side={THREE.DoubleSide}
+        dispose={() => {}} // Empty dispose function instead of null
+      />
     </mesh>
   );
 }
 
-export default function MediaFlyThroughBackground() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: -1 }}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 70 }}>
-        <EffectComposer multisampling={0}>
-          <DepthOfField
-            focusDistance={0}
-            focalLength={0.02}
-            bokehScale={2}
-          />
-          {mediaFiles.map((url, i) => (
-            <FlyingImage key={i} url={url} />
-          ))}
-          <ambientLight intensity={1.5} />
-        </EffectComposer>
-      </Canvas>
-    </div>
-  );
-}
+

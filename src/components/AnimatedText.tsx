@@ -1,4 +1,4 @@
-// AnimatedText.tsx – split/falling text animation for headings
+// AnimatedText.tsx – simple fade-in text animation for headings
 
 'use client';
 
@@ -14,19 +14,14 @@ interface AnimatedTextProps {
 
 const AnimatedText: React.FC<AnimatedTextProps> = ({ text, className = '', delay = 0, duration = 0.6 }) => {
   return (
-    <span className={`inline-block ${className}`}>      
-      {Array.from(text).map((char, index) => (
-        <motion.span
-          key={`char-${index}-${char}`}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: delay + index * 0.03, duration, ease: 'easeOut' }}
-          className="inline-block"
-        >
-          {char === ' ' ? '\u00A0' : char}
-        </motion.span>
-      ))}
-    </span>
+    <motion.span
+      className={`inline-block ${className}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay, duration, ease: 'easeOut' }}
+    >
+      {text}
+    </motion.span>
   );
 };
 

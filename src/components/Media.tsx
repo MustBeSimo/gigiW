@@ -8,7 +8,6 @@ import Image from 'next/image';
 interface MediaItem {
   type: 'image' | 'video';
   src: string;
-  thumbnail?: string; // Thumbnail for videos
   title: string;
   description: string;
   category: string;
@@ -18,7 +17,6 @@ const mediaContent: MediaItem[] = [
   {
     type: 'video',
     src: '/images/media/sunny-day.mp4',
-    thumbnail: '/images/media/empowered-woman.png',
     title: 'Sunny Day Vibes',
     description: 'Embracing the energy of a beautiful day',
     category: 'Lifestyle'
@@ -33,7 +31,6 @@ const mediaContent: MediaItem[] = [
   {
     type: 'video',
     src: '/images/media/digital-life.mp4',
-    thumbnail: '/images/media/blue-hair-composition.png',
     title: 'Digital Life',
     description: 'A day in my digital world',
     category: 'Lifestyle'
@@ -48,7 +45,6 @@ const mediaContent: MediaItem[] = [
   {
     type: 'video',
     src: '/images/media/fitness-outdoor.mp4',
-    thumbnail: '/images/media/empowered-woman.png',
     title: 'Outdoor Adventures',
     description: 'Exploring and staying fit in nature',
     category: 'Fitness'
@@ -56,7 +52,6 @@ const mediaContent: MediaItem[] = [
   {
     type: 'video',
     src: '/images/media/lifestyle-video.mp4',
-    thumbnail: '/images/media/blue-hair-portrait.png',
     title: 'Life in Motion',
     description: 'Capturing the essence of daily moments',
     category: 'Lifestyle'
@@ -78,10 +73,10 @@ const mediaContent: MediaItem[] = [
 ];
 
 const socialLinks = [
-  { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/heyitsgigiai' },
+  { icon: 'instagram', color: 'pink', url: 'https://www.instagram.com/heyitsgigiai/' },
   { icon: 'twitter', color: 'blue', url: 'https://x.com/HeyItsGigiAI' },
   { icon: 'tiktok', color: 'purple', url: 'https://www.tiktok.com/@heyitsgigiai' },
-  { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/Gigi_Glitz/' }
+  { icon: 'pinterest', color: 'red', url: 'https://au.pinterest.com/HeyItsGigiAi/' }
 ];
 
 export default function Media() {
@@ -194,6 +189,12 @@ export default function Media() {
                       loop
                       muted
                       playsInline
+                      preload="auto"
+                      style={{
+                        objectFit: 'cover',
+                        width: '100%',
+                        height: '100%'
+                      }}
                     />
                     {/* Metallic Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-pink-500/10 mix-blend-overlay" />
@@ -206,6 +207,8 @@ export default function Media() {
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      priority={index === 0}
+                      loading={index === 0 ? 'eager' : 'lazy'}
                     />
                     {/* Shine Effect */}
                     <motion.div

@@ -1,57 +1,67 @@
 'use client';
 
-import Chat from '@/components/Chat';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function ChatPage() {
-  const { signOut, user } = useAuth();
-  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const supabase = createClientComponentClient();
 
-  // This effect will clean up the URL if there are any query parameters
   useEffect(() => {
-    // Check if there are query parameters in the URL
-    if (window.location.search || window.location.hash) {
-      // Replace current URL with a clean one, keeping the pathname
-      router.replace('/chat');
-    }
-  }, [router]);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
-  return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-b from-gray-100 to-white">
-        <div className="container mx-auto px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-between items-center mb-8"
-          >
-            <Link href="/" className="text-2xl font-bold text-gray-800">
-              Gigi Glitz
-            </Link>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600">
-                Welcome, {user?.user_metadata?.full_name || 'User'}
-              </span>
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </motion.div>
-          
-          <div className="mt-10">
-            <Chat />
-          </div>
+  // Loading state
+  if (isAuthenticated === null) {
+    return (
+      <main className="container mx-auto min-h-screen p-4 flex items-center justify-center">
+        <div className="animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800 p-8 text-center">
+          Loading...
         </div>
+      </main>
+    );
+  }
+
+  // Not authenticated
+  if (!isAuthenticated) {
+    return (
+      <main className="container mx-auto min-h-screen p-4 flex items-center justify-center">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-2xl font-bold mb-6">Sign In Required</h1>
+          <p className="mb-6 text-gray-600 dark:text-gray-300">
+            You need to be signed in to access the voice chat feature.
+          </p>
+          <Link 
+            href="/login" 
+            className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // Authenticated user
+  return (
+    <main className="container mx-auto min-h-screen p-4 flex items-start justify-center">
+      <div className="w-full max-w-4xl">
+        <h1 className="text-2xl font-bold mb-6 text-center">Chat with Gigi</h1>
       </div>
-    </ProtectedRoute>
+    </main>
   );
 } 

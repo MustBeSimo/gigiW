@@ -2,14 +2,209 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font Families */
+@layer base {
+  :root {
+    --font-inter: Inter, sans-serif;
+    --font-manrope: Manrope, sans-serif;
+  }
+}
+
+/* Premium Gradient Utilities */
+@layer utilities {
+  .bg-gradient-conic {
+    background: conic-gradient(from 0deg, #00D4FF, #14FFB1, #00D4FF);
+  }
+  
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+  
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+  
+  .hover\:animate-spin-slow:hover {
+    animation: spin 3s linear infinite;
+  }
+}
+
+/* Performance optimizations */
+* {
+  will-change: auto;
+}
+
+.optimized-transition {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.hover-border:hover {
+  border-color: rgb(59 130 246 / 0.8);
+}
+
+.hover-scale-sm:hover {
+  transform: scale(1.02);
+}
+
+/* Animated Border Effects */
+@keyframes border-glow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gentle-glow {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.005);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+.animate-border-flow {
+  animation: border-flow 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gentle-glow {
+  animation: gentle-glow 3s ease-in-out infinite;
+}
+
+/* Gradient Border Animation */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd);
+  background-size: 400% 400%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: inherit;
+  border-radius: inherit;
+  background: white;
+}
+
+.dark .gradient-border::before {
+  background: #1f2937;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Elegant Avatar Background Animations */
+@keyframes avatar-glow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  33% {
+    background-position: 100% 50%;
+  }
+  66% {
+    background-position: 200% 50%;
+  }
+}
+
+.animate-avatar-glow {
+  background-size: 400% 400%;
+  animation: avatar-glow 12s ease-in-out infinite;
+}
+
+/* Star Border Effect */
+.star-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.star-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: conic-gradient(from 0deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd, #ff6b6b);
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: subtract;
+  animation: star-rotate 3s linear infinite;
+}
+
+@keyframes star-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Rainbow Border Effect */
+.rainbow-border {
+  background: linear-gradient(45deg, 
+    #ff0000, #ff7f00, #ffff00, #00ff00, 
+    #0000ff, #4b0082, #9400d3, #ff0000
+  );
+  background-size: 800% 800%;
+  animation: rainbow-flow 3s linear infinite;
+  padding: 2px;
+  border-radius: 1rem;
+}
+
+@keyframes rainbow-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 800% 50%; }
+}
+
 :root {
-  --neon-pink: #FF2E63;
-  --neon-purple: #A239EA;
-  --neon-blue: #4DEEEA;
-  --neon-yellow: #FFE700;
-  --light-bg: #ffffff;
-  --dark-bg: #08080F;
-  --card-bg: rgba(255, 255, 255, 0.05);
+  --neon-pink: #FF7EB3;   /* Softer pink */
+  --neon-purple: #D8B4FE; /* Pastel purple/lilac */
+  --neon-blue: #74C0FC;   /* Sky blue */
+  --neon-yellow: #FFE066; /* Soft yellow */
+  --neon-mint: #A0F0BC;   /* Mint green for accent */
+  --light-bg: #FAFAFA;    /* Softer white background */
+  --dark-bg: #1A1625;     /* Softer dark purple-black */
+  --card-bg: rgba(255, 255, 255, 0.2); /* More visible cards */
+  --color-primary-rgb: 255, 126, 179;    /* Pink */
+  --color-secondary-rgb: 216, 180, 254;  /* Lilac */
+  --color-accent-rgb: 116, 192, 252;     /* Sky Blue */
 }
 
 html {
@@ -23,42 +218,29 @@ body {
 
 html.dark body {
   background-color: var(--dark-bg);
-  color: white;
+  color: #f1f5f9;  /* Using a lighter shade of white for better readability */
 }
 
-/* Modern Gradient Animations */
+/* Simple gradient text without heavy animations */
 .gradient-text {
   background: linear-gradient(
     to right,
     var(--neon-pink),
     var(--neon-purple),
-    var(--neon-blue),
-    var(--neon-yellow)
+    var(--neon-blue)
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  background-size: 300% 300%;
-  animation: gradient-shift 8s ease infinite;
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Lightweight glow effects */
+.simple-glow {
+  box-shadow: 0 2px 8px rgba(255, 126, 179, 0.2);
 }
 
-/* Neon Glow Effects */
-.neon-glow {
-  box-shadow: 0 0 10px rgba(255, 46, 99, 0.5),
-              0 0 20px rgba(255, 46, 99, 0.3),
-              0 0 30px rgba(255, 46, 99, 0.1);
-}
-
-.neon-text {
-  text-shadow: 0 0 10px rgba(255, 46, 99, 0.5),
-               0 0 20px rgba(255, 46, 99, 0.3),
-               0 0 30px rgba(255, 46, 99, 0.1);
+.simple-glow:hover {
+  box-shadow: 0 4px 16px rgba(255, 126, 179, 0.3);
 }
 
 /* Modern Input Styling */
@@ -67,79 +249,44 @@ html.dark body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   padding: 12px 20px;
-  color: white;
+  color: #18181b;  /* Dark text in light mode */
   transition: all 0.3s ease;
 }
 
-.modern-input:focus {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: var(--neon-pink);
-  box-shadow: 0 0 15px rgba(255, 46, 99, 0.3);
-  outline: none;
+.dark .modern-input {
+  color: #f1f5f9;  /* Light text in dark mode */
 }
 
 .modern-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(24, 24, 27, 0.6);  /* Darker placeholder in light mode */
 }
 
-/* Glassmorphism */
+.dark .modern-input::placeholder {
+  color: rgba(241, 245, 249, 0.6);  /* Lighter placeholder in dark mode */
+}
+
+/* Simplified glassmorphism */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
 }
 
-/* Cool Button Styles */
-.neon-button {
+/* Simple button styles */
+.simple-button {
   background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
   border: none;
   border-radius: 12px;
   padding: 12px 24px;
   color: white;
   font-weight: 600;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.neon-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: 0.5s;
-}
-
-.neon-button:hover::before {
-  left: 100%;
-}
-
-/* Floating Animation */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-  100% { transform: translateY(0px); }
-}
-
-.floating {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Hover Effects */
-.hover-scale {
-  transition: transform 0.3s ease;
-}
-
-.hover-scale:hover {
-  transform: scale(1.05);
+.simple-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 126, 179, 0.3);
 }
 
 /* Custom Scrollbar */
@@ -159,8 +306,8 @@ html.dark body {
 /* Form Styles */
 .form-container {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2rem;
 }
@@ -173,12 +320,11 @@ html.dark body {
   padding: 12px 20px;
   color: white;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease;
 }
 
 .form-input:focus {
   border-color: var(--neon-pink);
-  box-shadow: 0 0 15px rgba(255, 46, 99, 0.3);
   outline: none;
 }
 
@@ -194,18 +340,95 @@ html.dark body {
   padding: 14px 28px;
   color: white;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .form-submit:hover {
+  transform: translateY(-1px);
+}
+
+/* Remove heavy animations and keep only essential ones */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Simplified card styles */
+.simple-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.simple-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(255, 46, 99, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dark .simple-card {
+  background: rgba(31, 41, 55, 0.9);
+}
+
+.dark .simple-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Performance optimized slider */
+.slider {
+  background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 @layer base {
   body {
-    @apply bg-gray-900 text-white;
+    @apply bg-gray-50 text-gray-800 dark:bg-[#1A1625] dark:text-white;
   }
 
   :root {
@@ -229,12 +452,12 @@ html.dark body {
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
 
-    /* Modern neon colors */
-    --neon-pink: #ff61d8;
-    --neon-purple: #7e5fff;
-    --neon-blue: #2196f3; 
-    --neon-cyan: #00d8ff;
-    --neon-yellow: #ffde03;
+    /* Modern pastel colors */
+    --neon-pink: #FF7EB3;
+    --neon-purple: #D8B4FE;
+    --neon-blue: #74C0FC; 
+    --neon-cyan: #A0F0BC;
+    --neon-yellow: #FFE066;
   }
  
   .dark {
@@ -611,4 +834,16 @@ html.dark body {
 .bg-blur {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] {
+  --color-primary-rgb: 255, 126, 179;    /* Pink */
+  --color-secondary-rgb: 216, 180, 254;  /* Lilac */
+  --color-accent-rgb: 116, 192, 252;     /* Sky Blue */
+}
+
+[data-theme="light"] {
+  --color-primary-rgb: 255, 126, 179;    /* Pink */
+  --color-secondary-rgb: 216, 180, 254;  /* Lilac */
+  --color-accent-rgb: 116, 192, 252;     /* Sky Blue */
 } 

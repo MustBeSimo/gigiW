@@ -22,20 +22,19 @@ const guides = [
     ]
   },
   {
-    title: "Gigi's Crypto Guide",
-    subtitle: 'Beginner 5 Step Guide',
-    description: "New to crypto? Don't stress, queen—I got you! This fun, friendly, no-fluff 5-step guide will walk you through exactly what crypto is, how to buy your first coin, and how to keep your money safe—all without needing a finance degree or techy background.",
-    image: '/images/guides/crypto-guide.jpg',
-    fileSize: '4MB',
-    buttonColor: 'purple',
-    icon: 'fa-solid fa-bitcoin-sign',
-    downloadUrl: 'https://payhip.com/b/k9Ygc',
+    title: "Thought Record Guide",
+    subtitle: 'Master a 5-step thought-shift exercise',
+    description: "Transform difficult thoughts with this evidence-based guide. Learn the 5-step thought-shift exercise used by mental health professionals worldwide. This practical workbook will teach you to identify unhelpful thinking patterns and develop more balanced perspectives.",
+    image: '/images/guides/thought-record.png',
+    fileSize: '3MB',
+    buttonColor: 'emerald',
+    icon: 'fa-solid fa-brain',
+    downloadUrl: '#',
     highlights: [
-      'What crypto actually is (in real girl terms)',
-      'The safest apps to start with',
-      'How to buy Bitcoin or Ethereum in 10 minutes',
-      'Beginner-friendly lingo decoded',
-      'Tips to protect your coins'
+      '5-step thought-shift framework',
+      'Common thinking trap examples',
+      'Guided practice worksheets',
+      'Evidence-based techniques (CBT-inspired)'
     ]
   }
 ];
@@ -55,12 +54,12 @@ export default function Guides() {
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
             Free Downloads
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
-              Level Up Your Life & Wealth
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              Transform Your Mindset & Wellbeing
             </span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Exclusive guides crafted with love to help you grow, glow, and prosper in the digital age.
+            Evidence-based guides crafted with care to help you develop mental wellness and emotional resilience.
           </p>
         </motion.div>
 

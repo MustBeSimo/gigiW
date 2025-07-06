@@ -8,10 +8,19 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        inter: ['var(--font-inter)', 'sans-serif'],
+        manrope: ['var(--font-manrope)', 'sans-serif'],
+      },
       colors: {
         primary: {
           500: '#ff758c',
           600: '#ff7eb3',
+        },
+        'thought-coach': {
+          'teal': '#C5E4E7',
+          'off-white': '#F5F8F9',
+          'slate': '#42515C',
         },
       },
       animation: {

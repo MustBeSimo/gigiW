@@ -7,6 +7,15 @@ export interface Profile {
   subscription_status: 'free' | 'premium'
   subscription_end_date: string | null
   stripe_customer_id: string | null
+  avatar_style: 'friend' | 'professional' | 'minimal' | null
+  created_at: string
+}
+
+export interface MoodLog {
+  id: string
+  user_id: string
+  mood_emoji: string | null
+  mood_rating: number | null
   created_at: string
 }
 
@@ -39,6 +48,11 @@ export interface Database {
         Row: Subscription
         Insert: Omit<Subscription, 'id' | 'created'>
         Update: Partial<Omit<Subscription, 'id' | 'user_id'>>
+      }
+      mood_logs: {
+        Row: MoodLog
+        Insert: Omit<MoodLog, 'id' | 'created_at'>
+        Update: Partial<Omit<MoodLog, 'id' | 'user_id'>>
       }
     }
     Functions: {

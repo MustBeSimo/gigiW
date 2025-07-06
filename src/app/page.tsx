@@ -1,34 +1,93 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import SpotlightCard from '@/components/SpotlightCard';
-import SpotlightMediaScroll from '@/components/SpotlightMediaScroll';
-import SpotlightChat from '@/components/SpotlightChat';
+import SimpleCard from '@/components/SimpleCard';
 import SocialLinks from '@/components/SocialLinks';
 import ContactCard from '@/components/ContactCard';
+import TypewriterText from '@/components/TypewriterText';
+import FAQCard from '@/components/FAQCard';
+import Hero from '@/components/Hero';
+import DemoChat from '@/components/DemoChat';
+import UpsellBanner from '@/components/UpsellBanner';
 const GuideCard = React.lazy(() => import('@/components/GuideCard'));
 const ChatCard = React.lazy(() => import('@/components/ChatCard'));
+const WeatherHoroscopeCard = React.lazy(() => import('@/components/WeatherHoroscopeCard'));
 import { fetchSocialLinks } from '@/utils/clientSocialLinks';
 import { SocialLink } from '@/utils/socialLinks';
 
-import AnimatedText from '@/components/AnimatedText';
-import ShinyText from '@/components/ShinyText';
+import MoodCheckinCard from '@/components/MoodCheckinCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function HomePage() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [buying, setBuying] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<'gigi' | 'vee' | 'lumo'>('gigi');
+  const [isDemoChatOpen, setIsDemoChatOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Avatar configuration
+  const avatars = [
+    {
+      id: 'gigi' as const,
+      name: 'Gigi',
+      description: 'Your empathetic AI companion',
+      src: '/images/avatars/Gigi_avatar.png',
+      gradient: 'from-pink-200 to-purple-200'
+    },
+    {
+      id: 'vee' as const,
+      name: 'Vee',
+      description: 'Your logical thought coach',
+      src: '/images/avatars/Vee_avatar.png',
+      gradient: 'from-blue-200 to-cyan-200'
+    },
+    {
+      id: 'lumo' as const,
+      name: 'Lumo',
+      description: 'Your creative wellness guide',
+      src: '/images/avatars/Lumo_avatar.png',
+      gradient: 'from-teal-200 to-emerald-200'
+    }
+  ];
+
+  const currentAvatar = avatars.find(avatar => avatar.id === selectedAvatar) || avatars[0];
+
+  const punchlines = [
+    "AI-Powered Mental Wellness & Thought Coaching 🧠",
+    "Transform Negative Thoughts into Positive Growth 💚",
+    "Evidence-Based Cognitive Behavioral Therapy Support",
+    "24/7 Private Journaling & Mood Tracking Assistant",
+    "Personalized Mental Health Guidance at Your Fingertips",
+    "Breakthrough Limiting Beliefs with AI Coaching",
+    "Your Digital Safe Space for Emotional Wellness",
+    "Clinical-Grade CBT Techniques Made Accessible",
+    "Mindful Conversations for Mental Health Recovery"
+  ];
 
   useEffect(() => {
-    // Fetch social links
-    const loadSocialLinks = async () => {
-      const links = await fetchSocialLinks();
-      setSocialLinks(links);
-    };
+    // Handle auth code and clean URL
+    const code = searchParams.get('code');
+    if (code) {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('code');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
 
-    loadSocialLinks();
+    // Set chat visible when user is signed in
+    if (user) {
+      setIsChatVisible(true);
+    }
 
     // Check if mobile
     const checkMobile = () => {
@@ -38,242 +97,345 @@ export default function HomePage() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, [searchParams, user]);
+
+  // Fetch balance when user is available
+  useEffect(() => {
+    if (user) {
+      const fetchBalance = async () => {
+        try {
+          const response = await fetch('/api/balance');
+          const data = await response.json();
+          setBalance(data.balance);
+        } catch (error) {
+          console.error('Error fetching balance:', error);
+        }
+      };
+      fetchBalance();
+
+      // Fetch user profile from Supabase
+      const supabase = createClientComponentClient();
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => setUserProfile(data));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Fetch social links
+    const loadSocialLinks = async () => {
+      const links = await fetchSocialLinks();
+      setSocialLinks(links);
+    };
+
+    loadSocialLinks();
   }, []);
 
-  // Conditionally render sign-in, balance info, purchase, and chat
-  function ChatSpotlight() {
-    const { user, loading, signInWithGoogle } = useAuth();
-    const [balance, setBalance] = useState<number | null>(null);
-
-    useEffect(() => {
-      if (user) {
-        fetch('/api/balance')
-          .then(res => res.json())
-          .then(data => setBalance(data.balance));
-      }
-    }, [user]);
-
-    if (loading) return <p>Loading...</p>;
-    if (!user)
-      return (
-        <button onClick={signInWithGoogle} className="bg-white text-black px-4 py-2 rounded">
-          Sign in with Google
-        </button>
-      );
-
-    const handleBuy = async () => {
+  const handleBuy = async () => {
+    setBuying(true);
+    try {
       const res = await fetch('/api/checkout', { method: 'POST' });
       const { sessionId } = await res.json();
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      stripe?.redirectToCheckout({ sessionId });
-    };
+      await stripe?.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error('Error during checkout:', error);
+    } finally {
+      setBuying(false);
+    }
+  };
 
-    return (
-      <>
-        <p className="text-white">Hello, {user.email}</p>
-        <p className="text-white">Balance: {balance ?? '...'}</p>
-        <button onClick={handleBuy} className="bg-yellow-400 text-black px-4 py-2 rounded mb-4">
-          Buy 200 messages
-        </button>
-        <ChatCard />
-      </>
-    );
-  }
+  const handleStartDemo = () => {
+    setIsDemoChatOpen(true);
+  };
 
-  // Cards layout: aligned in a flex container on desktop, stacked on mobile
-  const { user, loading, signInWithGoogle } = useAuth();
-const [balance, setBalance] = useState<number | null>(null);
-const [buying, setBuying] = useState(false);
-
-useEffect(() => {
-  if (user) {
-    fetch('/api/balance')
-      .then(res => res.json())
-      .then(data => setBalance(data.balance));
-  }
-}, [user]);
-
-const handleBuy = async () => {
-  setBuying(true);
-  const res = await fetch('/api/checkout', { method: 'POST' });
-  const { sessionId } = await res.json();
-  const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-  stripe?.redirectToCheckout({ sessionId });
-  setBuying(false);
-};
+  const handleAvatarChange = (avatar: 'gigi' | 'vee' | 'lumo') => {
+    setSelectedAvatar(avatar);
+  };
 
   return (
-    <main className="relative min-h-screen w-full">
-      
-      <div className="relative z-10">
-        <div className={`container mx-auto p-4 md:p-8 relative z-10 ${isMobile ? 'flex flex-col gap-6' : 'h-screen'}`}>
-          {/* Hero Spotlight Card */}
-          <SpotlightCard
-            title="Hey, It's Gigi AI"
-            subtitle="Your favorite AI bestie ✨"
-            className="inline-block mx-auto mb-8 mt-6"
-            isDraggable={false}
-            spotlightColor="rgba(255, 255, 255, 0.3)"
-          >
-            <div className="flex justify-center mt-4">
-              <Image src="/images/avatars/gigi-avatar-logo.png" alt="Gigi avatar" width={200} height={200} className="w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 object-contain" />
-            </div>
-          </SpotlightCard>
+    <main className="relative min-h-screen w-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Sidebar for Weather/Horoscope - Mobile Optimized */}
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 max-w-sm bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 z-40 ${
+        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        <div className="p-4 sm:p-6 h-full overflow-y-auto">
+          <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-gray-800 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Weather & Horoscope</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              aria-label="Close sidebar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           
-          {/* Cards */}
-          <div className={`w-full ${isMobile ? 'flex flex-col items-center space-y-6' : 'flex justify-center items-start flex-wrap gap-6'}`}>
-            {/* Media Spotlight Card */}
-            <SpotlightCard
-              title="Gigi's Media Gallery"
-              subtitle="Scroll through images and videos"
-              className="w-full md:w-96"
-              isDraggable={!isMobile}
-              spotlightColor="rgba(124, 58, 237, 0.81)"
-            >
-              <Suspense fallback={<div className="text-center text-gray-300">Loading gallery...</div>}>
-                <SpotlightMediaScroll />
-              </Suspense>
-            </SpotlightCard>
-
-            {/* Sign In / Account Card (always visible) */}
-            {/* Spotlight Chat Card, visible to signed-in users */}
-            {user && (
-              <SpotlightCard
-                title="Chat with Gigi"
-                subtitle="Your AI bestie is here!"
-                className="w-full md:w-96"
-                isDraggable={!isMobile}
-                spotlightColor="rgba(255, 46, 99, 0.7)"
-              >
-                <SpotlightChat />
-              </SpotlightCard>
-            )}
-
-            <SpotlightCard
-              title={user ? `Welcome${user.email ? ", " + user.email : ""}` : "Sign in to Chat"}
-              subtitle={user ? "Manage your account" : "Access Gigi's AI chat by signing in"}
-              className="w-full md:w-96"
-              isDraggable={!isMobile}
-              spotlightColor={user ? "rgba(34,197,94,0.7)" : "rgba(255,255,255,0.8)"}
-            >
-              {loading ? (
-                <div className="text-center text-gray-500">Loading...</div>
-              ) : user ? (
-                <>
-                  <div className="flex flex-col gap-2 items-center">
-                    <span className="text-green-600 font-semibold">Signed in</span>
-                    <span className="text-pink-600 font-bold">Balance: {balance ?? '…'}</span>
-                    <button onClick={handleBuy} className="bg-yellow-400 text-black px-3 py-1 rounded mt-1 text-sm">Buy 200 messages</button>
-                    <button onClick={() => window.location.href = "/api/auth/signout"} className="bg-gray-200 text-black px-3 py-1 rounded mt-1 text-sm">Sign Out</button>
-                  </div>
-                </>
-              ) : (
-                <button onClick={signInWithGoogle} className="bg-pink-500 text-white px-4 py-2 rounded w-full font-bold mt-2">
-                  Sign in with Google
-                </button>
-              )}
-            </SpotlightCard>
-
-
-            {/* Follow Me! Card */}
-            <SpotlightCard
-              title="Follow Me!"
-              subtitle="Stay connected with Gigi on social media"
-              className="w-full md:w-96"
-              isDraggable={!isMobile}
-              spotlightColor="rgba(236, 72, 154, 0.82)"
-            >
-              <SocialLinks links={socialLinks} />
-            </SpotlightCard>
-            
-            {/* Guides Card */}
-            <SpotlightCard
-              title="Download Free Guides"
-              subtitle="Exclusive content just for you"
-              className="w-full md:w-96"
-              isDraggable={!isMobile}
-              spotlightColor="rgba(124, 58, 237, 0.81)"
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <GuideCard
-                  title="Gigi's Crypto Beginner 5 Step Guide"
-                  description="🔥 New to crypto? Feeling overwhelmed by all the jargon? Don't stress, queen—I got you! 💅"
-                  imageSrc="/images/guides/crypto-guide.jpg"
-                  downloadUrl="https://payhip.com/b/k9Ygc"
-                />
-                
-                <GuideCard
-                  title="Glow Up & Own It: 10 Exercises to Build Confidence"
-                  description="Ready to break up with self-doubt and fall head over heels in love with your body?"
-                  imageSrc="/images/guides/confidence-guide.jpg"
-                  downloadUrl="https://payhip.com/b/YKuyU"
-                />
-              </div>
-            </SpotlightCard>
-            
-            {/* Chat Card (always visible) */}
-            <SpotlightCard
-              title="Let's Chat"
-              subtitle="Have a secure conversation with your fav AI gal"
-              className="w-full md:w-2/3"
-              isDraggable={!isMobile}
-              spotlightColor="rgba(219, 39, 120, 0.75)"
-            >
-              <Suspense fallback={<div className="text-center text-pink-200 py-8">Loading chat…</div>}>
-                {(() => {
-                  // Inline implementation for ChatCardWithBalance
-                  const [balance, setBalance] = React.useState<number|null>(null);
-                  const [buying, setBuying] = React.useState(false);
-                  React.useEffect(() => {
-                    if (user) {
-                      fetch('/api/balance')
-                        .then(res => res.json())
-                        .then(data => setBalance(data.balance));
-                    }
-                  }, [user]);
-                  const handleBuy = async () => {
-                    setBuying(true);
-                    const res = await fetch('/api/checkout', { method: 'POST' });
-                    const { sessionId } = await res.json();
-                    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-                    stripe?.redirectToCheckout({ sessionId });
-                    setBuying(false);
-                  };
-                  if (loading) return <div className="text-center text-gray-500">Loading...</div>;
-                  return (
-                    <>
-                      {user ? (
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
-                          <span className="text-sm text-white/80">Balance: <span className="font-bold text-pink-300">{balance ?? '…'}</span></span>
-                          <button onClick={handleBuy} className="bg-yellow-400 text-black px-3 py-1 rounded text-sm font-bold" disabled={buying}>
-                            {buying ? 'Redirecting…' : 'Buy 200 messages'}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="mb-3 flex flex-col items-center">
-                          <span className="inline-block bg-white/20 text-xs text-white px-3 py-1 rounded-full mb-2">Preview mode: test messages do not count against balance</span>
-                        </div>
-                      )}
-                      <ChatCard key={user ? 'user' : 'preview'} />
-                    </>
-                  );
-                })()}
-              </Suspense>
-            </SpotlightCard>
-            
-            {/* Collaboration Card */}
-            <SpotlightCard
-              title="Collaborate"
-              subtitle="Let's work together on something amazing"
-              className="w-full md:w-96"
-              isDraggable={!isMobile}
-              spotlightColor="hsla(243, 100.00%, 61.60%, 0.82)"
-            >
-              <ContactCard email="heyitsgigiai@gmail.com" />
-            </SpotlightCard>
+          <div className="pb-4">
+            <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
+              <WeatherHoroscopeCard />
+            </Suspense>
           </div>
         </div>
       </div>
+
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="relative z-10">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          
+          {/* Header with mobile-optimized layout */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Mind Gleam</h1>
+              {user && balance !== null && (
+                <div className="bg-white/80 dark:bg-gray-800/80 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium ml-auto sm:ml-0">
+                  <span className="text-gray-600 dark:text-gray-400">Credits: </span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{balance}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2.5 sm:p-2 bg-white/50 dark:bg-gray-800/50 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
+                title="Weather & Horoscope"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </button>
+              {user && (
+                <button
+                  onClick={signOut}
+                  className="px-3 py-2 sm:px-4 sm:py-2 bg-white/50 dark:bg-gray-800/50 rounded-lg text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 font-medium"
+                >
+                  Sign Out
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Hero Section */}
+          <section className="mb-12 lg:mb-16">
+            <Hero 
+              onStartDemo={handleStartDemo}
+              selectedAvatar={selectedAvatar}
+              onAvatarChange={handleAvatarChange}
+            />
+          </section>
+
+          {/* Pricing Section - Transparent */}
+          <section className="mb-12 lg:mb-16">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                Choose Your Plan
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Free Plan */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Free Trial</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$0</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">50 messages included</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Basic CBT guidance</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Mood check-ins</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>3 AI companions</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Plus Plan */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border-2 border-emerald-200 dark:border-emerald-600 relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    Most Popular
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Plus</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$4.99</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">200 messages</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Advanced CBT sessions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Mood trend analysis</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Streak tracking</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Priority support</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Pro Plan */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Pro</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$9.99</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Unlimited messages</p>
+                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Everything in Plus</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Voice conversations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Custom exercises</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Progress reports</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Upsell Banners - Contextual */}
+          <UpsellBanner 
+            trigger="low-balance" 
+            balance={balance || 0}
+            onUpgrade={() => handleBuy()}
+          />
+          
+          {!user && (
+            <UpsellBanner 
+              trigger="feature-locked"
+              onUpgrade={() => signInWithGoogle()}
+            />
+          )}
+
+          {/* Chat Section for Authenticated Users */}
+          {user && isChatVisible && (
+            <section className="mb-12 lg:mb-16">
+              <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+                <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                  Chat with {selectedAvatar.charAt(0).toUpperCase() + selectedAvatar.slice(1)}
+                </h2>
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
+                  <ChatCard />
+                </Suspense>
+              </div>
+            </section>
+          )}
+
+          {/* Mood Check-in Section */}
+          <section className="mb-12 lg:mb-16">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                Daily Mood Check-in
+              </h2>
+              
+              {/* Mood Chain Upsell */}
+              <UpsellBanner 
+                trigger="mood-chain"
+                onUpgrade={() => handleBuy()}
+              />
+              
+              <div className="max-w-md mx-auto">
+                <MoodCheckinCard />
+              </div>
+            </div>
+          </section>
+
+          {/* Guides Section */}
+          <section className="mb-12 lg:mb-16">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                Free CBT Guides & Resources
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-64 rounded-lg"></div>}>
+                  <GuideCard />
+                </Suspense>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ Section */}
+          <section className="mb-12 lg:mb-16">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                Frequently Asked Questions
+              </h2>
+              <div className="max-w-4xl mx-auto">
+                <FAQCard />
+              </div>
+            </div>
+          </section>
+
+                     {/* Social Links Section */}
+           <section className="mb-12 lg:mb-16">
+             <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
+               <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+                 Connect with Us
+               </h2>
+               <div className="max-w-md mx-auto">
+                 <SocialLinks links={socialLinks} />
+               </div>
+             </div>
+           </section>
+        </div>
+      </div>
+
+      {/* Demo Chat Modal */}
+      <DemoChat 
+        isOpen={isDemoChatOpen}
+        onClose={() => setIsDemoChatOpen(false)}
+        selectedAvatar={selectedAvatar}
+      />
     </main>
   );
 } 

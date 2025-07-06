@@ -1,0 +1,31 @@
+Based on the codebase analysis, I can confirm that the implementation matches the description provided. 
+Here's a detailed breakdown of the key components and their functionality:
+
+Voice Chat System (ElevenLabs Integration):
+The GigiConversation component handles the ElevenLabs widget integration
+Uses a 5-minute trial system tracked in the voice_chat_usage table
+Trial status is managed through the check_trial_eligibility Supabase function
+Widget initialization is handled with proper cleanup and error handling
+
+Text Chat System:
+Implemented in the Chat and SpotlightChat components
+New users get 50 free messages (tracked in user_balances table)
+Real-time balance updates through Supabase subscriptions
+UserBalance component shows remaining credits
+
+Subscription System:
+Uses Stripe for payment processing
+Webhook handler (/api/webhooks/stripe/route.ts) manages:
+checkout.session.completed
+invoice.paid
+invoice.payment_failed
+Subscription status tracked in user_subscriptions table
+Real-time subscription updates through Supabase channels
+
+Authentication Flow:
+Handles user signup/login
+Initializes user profile and balance (50 free messages)
+Sets up subscription tracking
+Manages trial eligibility
+The implementation provides a robust system for handling both voice and text chat features, with separate trial/subscription mechanisms for each. The code includes proper error handling, real-time updates, and a clean separation of concerns between components.
+Would you like me to dive deeper into any particular aspect of the implementation?

@@ -1,6 +1,6 @@
 // MediaBackground.tsx – v10  (double stripe height)
 // ---------------------------------------------------------------------
-// • Stripes now twice as tall: 22 vh desktop, 20 vh mobile
+// • Stripes now twice as tall: 22 vh desktop, 20 vh mobile
 // ---------------------------------------------------------------------
 
 'use client'
@@ -10,10 +10,11 @@ import { gsap } from 'gsap'
 import { cn } from '@/utils/cn'
 
 /* ─── Tunables ─────────────────────────────────────────────── */
-const CARD_ASPECT     = 0.33   // width = height × 0.33  (portrait)
-const DESKTOP_ROW_H   = 22     // ↑ doubled from 11 vh
-const MOBILE_ROW_H    = 20     // ↑ doubled from 10 vh
+const CARD_ASPECT     = 0.33   // width = height × 0.33  (portrait)
+const DESKTOP_ROW_H   = 22     // ↑ doubled from 11 vh
+const MOBILE_ROW_H    = 20     // ↑ doubled from 10 vh
 const SPEED_PX_SEC    = 38     // marquee speed
+const FADE_DURATION   = 0.75   // crossfade duration in seconds
 
 /* Types */
 interface MediaItem { url: string; type: 'image' | 'video' }
@@ -137,8 +138,37 @@ export default function MediaBackground ({ className }: Props) {
       const dir  = idx % 2 ? 1 : -1
       const dist = row.scrollWidth
       const dur  = dist / SPEED_PX_SEC
-      const tl   = gsap.timeline({ repeat: -1 })
-      tl.to(row, { x: dir * -dist, duration: dur, ease: 'none' })
+      const tl   = gsap.timeline({ 
+        repeat: -1,
+        defaults: {
+          ease: 'none',
+          immediateRender: true
+        }
+      })
+      
+      // Create a crossfade effect
+      tl.to(row, {
+        x: dir * -dist,
+        duration: dur,
+        onUpdate: () => {
+          // Add smooth easing for opacity transitions
+          row.querySelectorAll('img, video').forEach((el) => {
+            const element = el as HTMLElement
+            const rect = element.getBoundingClientRect()
+            const viewportWidth = window.innerWidth
+            const fadeZone = viewportWidth * 0.1 // 10% of viewport for fade
+            
+            if (rect.right < fadeZone) {
+              element.style.opacity = String(rect.right / fadeZone)
+            } else if (rect.left > viewportWidth - fadeZone) {
+              element.style.opacity = String((viewportWidth - rect.left) / fadeZone)
+            } else {
+              element.style.opacity = '1'
+            }
+          })
+        }
+      })
+      
       tlRefs.current[idx] = tl
     })
   }, [media, rows])

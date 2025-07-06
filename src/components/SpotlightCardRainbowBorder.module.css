@@ -1,28 +1,47 @@
 .rainbow-border {
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  border-radius: 1.25rem;
+  inset: -2px;
+  border-radius: 30px;
   padding: 2px;
-  background: linear-gradient(270deg, #a259ff, #00e1ff, #ff00cc, #a259ff);
-  background-size: 600% 600%;
-  animation: rainbow-border-move 4s linear infinite;
-  box-sizing: border-box;
-  /* Mask out the center so only border is visible */
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  mask:
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
+  background: linear-gradient(
+    45deg,
+    #FF7EB3, /* Pink */
+    #D8B4FE, /* Purple */
+    #74C0FC, /* Blue */
+    #A0F0BC, /* Mint */
+    #FFE066, /* Yellow */
+    #FF7EB3  /* Back to Pink */
+  );
+  background-size: 200% 200%;
+  animation: gradient 8s ease infinite;
+  z-index: 0;
+  overflow: hidden;
 }
 
-@keyframes rainbow-border-move {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.rainbow-border-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .rainbow-border-inner {
+    background: rgba(0, 0, 0, 0.25);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 25%;
+  }
+  50% {
+    background-position: 100% 75%;
+  }
+  100% {
+    background-position: 0% 25%;
+  }
 }

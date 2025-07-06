@@ -3,6 +3,8 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Stripe from 'stripe';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -23,6 +25,9 @@ export async function POST(req: Request) {
     ],
     mode: 'payment',
     customer_email: session.user.email || undefined,
+    metadata: {
+      user_id: session.user.id,
+    },
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/?canceled=true`,
   });
