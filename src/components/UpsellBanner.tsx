@@ -46,11 +46,18 @@ const upsellContent = {
 export default function UpsellBanner({ trigger, balance, streak, onDismiss, onUpgrade }: UpsellBannerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
 
   const content = upsellContent[trigger];
   
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  useEffect(() => {
+    if (!isClient) return;
+    
     // Check if this upsell was already dismissed today
     const dismissKey = `upsell_dismissed_${trigger}_${new Date().toDateString()}`;
     const wasDismissed = localStorage.getItem(dismissKey) === 'true';
@@ -71,7 +78,7 @@ export default function UpsellBanner({ trigger, balance, streak, onDismiss, onUp
         shouldShow = !!user && streak !== undefined && streak >= 3;
         break;
       case 'mood-chain':
-        const moodCheckCount = parseInt(localStorage.getItem('mood_check_count') || '0');
+        const moodCheckCount = isClient ? parseInt(localStorage.getItem('mood_check_count') || '0') : 0;
         shouldShow = !!user && moodCheckCount >= 3;
         break;
       case 'feature-locked':
@@ -84,28 +91,32 @@ export default function UpsellBanner({ trigger, balance, streak, onDismiss, onUp
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [trigger, balance, streak, user]);
+  }, [trigger, balance, streak, user, isClient]);
 
   const handleDismiss = () => {
     setIsVisible(false);
     setIsDismissed(true);
     
     // Remember dismissal for today
-    const dismissKey = `upsell_dismissed_${trigger}_${new Date().toDateString()}`;
-    localStorage.setItem(dismissKey, 'true');
+    if (isClient) {
+      const dismissKey = `upsell_dismissed_${trigger}_${new Date().toDateString()}`;
+      localStorage.setItem(dismissKey, 'true');
+    }
     
     onDismiss?.();
   };
 
   const handleUpgrade = () => {
     // Track conversion attempt
-    const eventData = {
-      trigger,
-      balance,
-      streak,
-      timestamp: new Date().toISOString()
-    };
-    localStorage.setItem('upsell_click', JSON.stringify(eventData));
+    if (isClient) {
+      const eventData = {
+        trigger,
+        balance,
+        streak,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('upsell_click', JSON.stringify(eventData));
+    }
     
     onUpgrade?.();
   };

@@ -46,8 +46,26 @@ export default function MoodCheckinCard() {
   const [lastSubmissionTime, setLastSubmissionTime] = useState<Date | null>(null);
   const [moodCheckins, setMoodCheckins] = useState<number | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+  const [demoUsed, setDemoUsed] = useState(false);
+  const [demoCount, setDemoCount] = useState(0);
   const { user, loading } = useAuth();
   const supabase = createClientComponentClient();
+
+  // Ensure we're on the client side to prevent hydration mismatches
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Check demo usage from localStorage (only on client)
+    if (typeof window !== 'undefined') {
+      const demoData = localStorage.getItem('mindgleam_demo_mood');
+      if (demoData) {
+        const parsed = JSON.parse(demoData);
+        setDemoCount(parsed.count || 0);
+        setDemoUsed(parsed.count >= 3);
+      }
+    }
+  }, []);
 
   // Debug: Log user state changes
   useEffect(() => {
@@ -639,28 +657,17 @@ export default function MoodCheckinCard() {
 
   // Demo mode for non-authenticated users
   if (!user) {
-    const [demoUsed, setDemoUsed] = useState(false);
-    const [demoCount, setDemoCount] = useState(0);
-    
-    useEffect(() => {
-      // Check demo usage from localStorage
-      const demoData = localStorage.getItem('mindgleam_demo_mood');
-      if (demoData) {
-        const parsed = JSON.parse(demoData);
-        setDemoCount(parsed.count || 0);
-        setDemoUsed(parsed.count >= 3);
-      }
-    }, []);
-
     const handleDemoSubmit = () => {
-      if (demoCount >= 3) return;
+      if (demoCount >= 3 || !isClient) return;
       
       // Save demo usage
       const newCount = demoCount + 1;
-      localStorage.setItem('mindgleam_demo_mood', JSON.stringify({
-        count: newCount,
-        lastUsed: new Date().toISOString()
-      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mindgleam_demo_mood', JSON.stringify({
+          count: newCount,
+          lastUsed: new Date().toISOString()
+        }));
+      }
       setDemoCount(newCount);
       setDemoUsed(newCount >= 3);
       
