@@ -671,14 +671,42 @@ export default function MoodCheckinCard() {
       setDemoCount(newCount);
       setDemoUsed(newCount >= 3);
       
+      // Generate personalized demo result based on mood
+      const getDemoReport = (emoji: string, rating: number) => {
+        if (rating >= 8) {
+          return {
+            insight: "You're feeling positive today! This is wonderful - recognizing and savoring good moments helps build emotional resilience.",
+            cbtTechnique: "Practice gratitude amplification: Write down 3 specific things you're grateful for and why they matter to you.",
+            affirmation: "I appreciate the good moments in my life and use them to build strength for challenging times.",
+            actionStep: "Share your positive energy with someone you care about or do something kind for yourself."
+          };
+        } else if (rating >= 6) {
+          return {
+            insight: "You're in a balanced emotional space. This awareness of your emotional state is a key strength in mental wellness.",
+            cbtTechnique: "Try mindful breathing: Take 4 slow breaths, focusing on the sensation of air entering and leaving your body.",
+            affirmation: "I am capable of navigating life's ups and downs with grace and self-compassion.",
+            actionStep: "Take a moment to appreciate something small and beautiful around you right now."
+          };
+        } else if (rating >= 4) {
+          return {
+            insight: "You're experiencing some challenging emotions today. Acknowledging this takes courage and is the first step toward feeling better.",
+            cbtTechnique: "Use the STOP technique: Stop what you're doing, Take a breath, Observe your thoughts/feelings, Proceed with intention.",
+            affirmation: "My current feelings are temporary. I have overcome difficult times before and I can do it again.",
+            actionStep: "Practice one small act of self-care today, like drinking a warm beverage or taking a short walk."
+          };
+        } else {
+          return {
+            insight: "You're going through a difficult time. Remember that reaching out and tracking your mood shows strength and self-awareness.",
+            cbtTechnique: "Try the 5-4-3-2-1 grounding technique: Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
+            affirmation: "I am not alone in this feeling. This difficult moment will pass, and I am stronger than I know.",
+            actionStep: "Be extra gentle with yourself today. Consider reaching out to a trusted friend or professional if you need support."
+          };
+        }
+      };
+
       // Show demo result
       setSubmitted(true);
-      setMoodReport({
-        insight: "Based on your mood selection, you're experiencing a natural range of emotions. This is completely normal and shows emotional awareness.",
-        cbtTechnique: "Try the 5-4-3-2-1 grounding technique: Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
-        affirmation: "My feelings are valid and temporary. I have the strength to navigate through them.",
-        actionStep: "Take 3 deep breaths and write down one thing you're grateful for today."
-      });
+      setMoodReport(getDemoReport(selectedEmoji, moodRating));
     };
 
     if (demoUsed) {
@@ -696,11 +724,11 @@ export default function MoodCheckinCard() {
               <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
                 <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-2">With your free account:</h4>
                 <ul className="text-sm text-emerald-800 dark:text-emerald-200 space-y-1">
-                  <li>• 50 mood check-ins</li>
+                  <li>• 5 mood check-ins and reports</li>
                   <li>• 20 chat messages</li>
-                  <li>• Personalized insights</li>
+                  <li>• Basic CBT guidance</li>
+                  <li>• 3 AI companions</li>
                   <li>• Progress tracking</li>
-                  <li>• CBT techniques</li>
                 </ul>
               </div>
               <button

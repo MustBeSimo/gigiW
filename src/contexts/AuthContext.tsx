@@ -122,22 +122,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log('Starting sign out process...');
       
-      // First call the server-side API to clear cookies properly
-      await fetch('/api/auth/signout', { method: 'POST' });
-      
-      // Then sign out on the client side
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      // Reset user state
+      // Reset user state immediately for better UX
       setUser(null);
       setSession(null);
       
-      // Redirect to home page
-      router.push('/');
+      // Call the server-side API to clear cookies properly
+      try {
+        await fetch('/api/auth/signout', { method: 'POST' });
+        console.log('Server-side sign out successful');
+      } catch (serverError) {
+        console.warn('Server-side sign out failed, continuing with client-side:', serverError);
+      }
+      
+      // Then sign out on the client side
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Client-side sign out error:', error);
+        // Don't throw here - continue with logout process
+      }
+      
+      console.log('Sign out completed successfully');
+      
+      // Force reload to ensure all state is cleared
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if there's an error, reset the state and redirect
+      setUser(null);
+      setSession(null);
+      window.location.href = '/';
     } finally {
       setLoading(false);
     }

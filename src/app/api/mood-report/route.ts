@@ -65,18 +65,23 @@ export async function POST(request: NextRequest) {
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     
     // Get session - in Vercel, this should work with the cookie-based auth
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('[Vercel] Session error:', sessionError);
+    let session = null;
+    try {
+      const { data: { session: sessionData }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.warn('[Vercel] Session error (continuing anonymously):', sessionError);
+      }
+      session = sessionData;
+    } catch (error) {
+      console.warn('[Vercel] Failed to get session (continuing anonymously):', error);
     }
     
-    // For Vercel deployment, we need to handle auth differently
-    // Check if user is authenticated, but allow fallback for development
+    // Always allow mood report generation, even for anonymous users
     const isAuthenticated = !!session?.user;
+    console.log('[Vercel] Authentication status:', isAuthenticated ? 'authenticated' : 'anonymous');
     
     if (!isAuthenticated) {
-      console.log('[Vercel] No authenticated session found, continuing with anonymous generation');
+      console.log('[Vercel] Processing anonymous mood report request');
     }
 
     const body = await request.json();
