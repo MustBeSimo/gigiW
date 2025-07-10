@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { useBalance } from '@/hooks/useBalance';
+import { MoodTrackingErrorBoundary } from '@/components/ErrorBoundary';
+import { Suspense, lazy } from 'react';
 
 const moodEmojis = [
   { emoji: '😢', label: 'Very Sad' },
@@ -45,12 +48,10 @@ export default function MoodCheckinCard() {
   const [periodReportType, setPeriodReportType] = useState<string | null>(null);
   const [lastSubmissionTime, setLastSubmissionTime] = useState<Date | null>(null);
   const [moodCheckins, setMoodCheckins] = useState<number | null>(null);
-  const [forceRefresh, setForceRefresh] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [demoUsed, setDemoUsed] = useState(false);
   const [demoCount, setDemoCount] = useState(0);
   const { user, loading } = useAuth();
-  const supabase = createClientComponentClient();
 
   // Ensure we're on the client side to prevent hydration mismatches
   useEffect(() => {
@@ -67,31 +68,47 @@ export default function MoodCheckinCard() {
     }
   }, []);
 
-  // Debug: Log user state changes
-  useEffect(() => {
-    console.log('MoodCheckinCard - User state:', { user: !!user, loading });
-  }, [user, loading]);
-
-  // Fetch mood check-in balance
+  // Simplified balance fetching - single, robust mechanism
   useEffect(() => {
     const fetchBalance = async () => {
-      if (!user) return;
+      if (!user || !isClient || moodCheckins !== null) return;
 
       try {
-        const response = await fetch('/api/balance');
+        const response = await fetch('/api/balance', {
+          method: 'GET',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        
         if (response.ok) {
           const data = await response.json();
-          setMoodCheckins(data.moodCheckins);
+          setMoodCheckins(data.moodCheckins || 0);
+        } else {
+          setMoodCheckins(10); // Default fallback
         }
       } catch (error) {
         console.error('Error fetching mood check-ins balance:', error);
+        setMoodCheckins(10); // Default fallback
       }
     };
 
-    if (user && !loading) {
+    // Fetch balance when user is available and client is ready
+    if (user && isClient && !loading && moodCheckins === null) {
       fetchBalance();
     }
-  }, [user, loading]);
+  }, [user, isClient, loading, moodCheckins]);
+
+  // Handle user state changes
+  useEffect(() => {
+    if (user?.id && isClient) {
+      // Reset balance to trigger fetch for new user
+      setMoodCheckins(null);
+    } else if (!user && isClient) {
+      // Reset state when user signs out
+      setMoodCheckins(null);
+      setSubmitted(false);
+      setMoodReport(null);
+    }
+  }, [user?.id, isClient]);
 
   // Load existing mood report on mount
   useEffect(() => {
@@ -147,15 +164,20 @@ export default function MoodCheckinCard() {
     }
   }, [user, loading]);
 
-  // Countdown timer that respects Supabase state
+  // Countdown timer
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (submitted && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    } else if (submitted && countdown === 0) {
-      // Reset state when timer expires
+    if (!submitted || countdown <= 0) return;
+
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [submitted, countdown]);
+
+  // Reset state when countdown expires
+  useEffect(() => {
+    if (submitted && countdown === 0) {
       setSubmitted(false);
       setMoodReport(null);
       setSelectedEmoji('');
@@ -163,14 +185,7 @@ export default function MoodCheckinCard() {
       setMoodNote('');
       setLastSubmissionTime(null);
     }
-    return () => clearTimeout(timer);
   }, [submitted, countdown]);
-
-  // Add debugging useEffect to monitor state changes
-  useEffect(() => {
-    console.log('[Vercel Frontend] State change - generatingReport:', generatingReport);
-    console.log('[Vercel Frontend] State change - moodReport:', moodReport ? 'exists' : 'null');
-  }, [generatingReport, moodReport]);
 
   const generateMoodReport = async (mood: string, rating: number, note: string) => {
     console.log('[Vercel Frontend] Setting generatingReport to TRUE');
@@ -291,9 +306,8 @@ export default function MoodCheckinCard() {
        console.log('[Vercel Frontend] Clearing generating state NOW...');
        setGeneratingReport(false);
        
-       // Force a re-render to ensure UI updates
-       console.log('[Vercel Frontend] Forcing UI refresh...');
-       setForceRefresh(prev => prev + 1);
+       // UI should auto-update when moodReport state changes
+       console.log('[Vercel Frontend] Mood report generated successfully');
       
     } catch (error) {
       console.error('[Vercel Frontend] Error in generateMoodReport:', error);
@@ -650,6 +664,35 @@ export default function MoodCheckinCard() {
           </div>
           <div className="h-8 bg-blue-200 dark:bg-blue-700 rounded mb-4"></div>
           <div className="h-10 bg-blue-200 dark:bg-blue-700 rounded"></div>
+        </div>
+        <div className="text-center mt-4">
+          <div className="text-sm text-blue-600 dark:text-blue-400">
+            {user ? 'Setting up your account...' : 'Loading authentication...'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while balance is being fetched for authenticated users
+  if (user && moodCheckins === null) {
+    return (
+      <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 backdrop-blur-sm p-6 rounded-2xl border border-blue-200/60 dark:border-blue-800/60 shadow-lg">
+        <div className="animate-pulse">
+          <div className="h-6 bg-blue-200 dark:bg-blue-700 rounded mb-4"></div>
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto"></div>
+            <div className="mt-2 text-sm text-blue-600 dark:text-blue-400">Loading your mood check-ins...</div>
+            <button
+              onClick={() => {
+                console.log('Manual refresh triggered - setting default balance');
+                setMoodCheckins(10); // Set default if stuck
+              }}
+              className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs"
+            >
+              Click here if stuck loading
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1112,131 +1155,135 @@ export default function MoodCheckinCard() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 border-blue-500 shadow-lg transition-colors duration-300 hover:border-blue-400">
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          How are you feeling today?
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Your daily mood check-in helps track your emotional wellness
-        </p>
-        
-        {/* Tips for better AI interaction */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-          <div className="text-xs text-blue-800 dark:text-blue-200">
-            <div className="font-medium mb-1">💡 Tips for better AI insights:</div>
-            <div className="text-left space-y-1">
-              • Share what influenced your mood (work, relationships, events)
-              <br />
-              • Mention specific emotions (anxious, excited, frustrated, grateful)
-              <br />
-              • Include context about your day or recent experiences
-              <br />
-              • Be honest about challenges or wins you're experiencing
+    <MoodTrackingErrorBoundary>
+      <div className="relative">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-xl">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              How are you feeling today?
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Your daily mood check-in helps track your emotional wellness
+            </p>
+            
+            {/* Tips for better AI interaction */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+              <div className="text-xs text-blue-800 dark:text-blue-200">
+                <div className="font-medium mb-1">💡 Tips for better AI insights:</div>
+                <div className="text-left space-y-1">
+                  • Share what influenced your mood (work, relationships, events)
+                  <br />
+                  • Mention specific emotions (anxious, excited, frustrated, grateful)
+                  <br />
+                  • Include context about your day or recent experiences
+                  <br />
+                  • Be honest about challenges or wins you're experiencing
+                </div>
+              </div>
+            </div>
+            
+            {moodCheckins !== null && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-700">
+                <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                  📊 {moodCheckins} mood check-ins remaining
+                </span>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Mood Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Choose your mood:
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {moodEmojis.map((mood) => (
+                <button
+                  key={mood.emoji}
+                  onClick={() => setSelectedEmoji(mood.emoji)}
+                  className={`p-3 rounded-lg text-2xl transition-all duration-200 ${
+                    selectedEmoji === mood.emoji
+                      ? 'bg-blue-500 text-white scale-105 border-2 border-blue-600'
+                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border-2 border-transparent hover:border-blue-300'
+                  }`}
+                  title={mood.label}
+                >
+                  {mood.emoji}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-        
-        {moodCheckins !== null && (
-          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-700">
-            <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
-              📊 {moodCheckins} mood check-ins remaining
-            </span>
+
+          {/* Mood Rating */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Rate your mood (1-10):
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">1</span>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={moodRating}
+                onChange={(e) => setMoodRating(Number(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <span className="text-sm text-gray-500 dark:text-gray-400">10</span>
+              <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
+                {moodRating}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
-        </div>
-      )}
-
-      {/* Mood Selection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Choose your mood:
-        </label>
-        <div className="grid grid-cols-5 gap-2">
-          {moodEmojis.map((mood) => (
-            <button
-              key={mood.emoji}
-              onClick={() => setSelectedEmoji(mood.emoji)}
-              className={`p-3 rounded-lg text-2xl transition-all duration-200 ${
-                selectedEmoji === mood.emoji
-                  ? 'bg-blue-500 text-white scale-105 border-2 border-blue-600'
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border-2 border-transparent hover:border-blue-300'
-              }`}
-              title={mood.label}
-            >
-              {mood.emoji}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Mood Rating */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Rate your mood (1-10):
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">1</span>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={moodRating}
-            onChange={(e) => setMoodRating(Number(e.target.value))}
-            className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-          />
-          <span className="text-sm text-gray-500 dark:text-gray-400">10</span>
-          <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
-            {moodRating}
-          </span>
-        </div>
-      </div>
-
-      {/* Mood Note */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          What's on your mind? (optional)
-        </label>
-        <textarea
-          value={moodNote}
-          onChange={(e) => setMoodNote(e.target.value)}
-          placeholder="Share what influenced your mood today... Examples:
+          {/* Mood Note */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              What's on your mind? (optional)
+            </label>
+            <textarea
+              value={moodNote}
+              onChange={(e) => setMoodNote(e.target.value)}
+              placeholder="Share what influenced your mood today... Examples:
 • 'Had a great meeting at work and feeling accomplished'
 • 'Feeling anxious about upcoming presentation tomorrow'
 • 'Grateful for time spent with family this weekend'
 • 'Stressed about finances but trying to stay positive'"
-          rows={4}
-          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-        />
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          💭 The more context you share, the more personalized your AI insights will be
+              rows={4}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+            />
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              💭 The more context you share, the more personalized your AI insights will be
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedEmoji || isSubmitting}
+            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 ${
+              !selectedEmoji || isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 active:scale-95 border-2 border-transparent hover:border-blue-500'
+            }`}
+          >
+            {isSubmitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Saving your mood...
+              </div>
+            ) : (
+              'Submit Mood Check-In'
+            )}
+          </button>
         </div>
       </div>
-
-      {/* Submit Button */}
-      <button
-        onClick={handleSubmit}
-        disabled={!selectedEmoji || isSubmitting}
-        className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 ${
-          !selectedEmoji || isSubmitting
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 active:scale-95 border-2 border-transparent hover:border-blue-500'
-        }`}
-      >
-        {isSubmitting ? (
-          <div className="flex items-center justify-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-            Saving your mood...
-          </div>
-        ) : (
-          'Submit Mood Check-In'
-        )}
-      </button>
-    </div>
+    </MoodTrackingErrorBoundary>
   );
 } 

@@ -1,54 +1,68 @@
 'use client';
 
-import { useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useState } from 'react';
+import { supabase } from '@/utils/supabase';
+import { loadStripe } from '@stripe/stripe-js';
 
-export default function SubscribeButton() {
-  const supabase = createClientComponentClient();
+const SubscribeButton = () => {
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const initializeStripeButton = async () => {
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      // Load Stripe.js
-      const script = document.createElement('script');
-      script.src = 'https://js.stripe.com/v3/buy-button.js';
-      script.async = true;
-      document.body.appendChild(script);
-
-      script.onload = () => {
-        // Create the buy button with user metadata
-        const button = document.createElement('stripe-buy-button');
-        button.setAttribute('buy-button-id', 'buy_btn_1RLkOSIclkOLK1ttRHNuANVx');
-        button.setAttribute('publishable-key', 'pk_test_51QoeBiIclkOLK1tt2o79EC0Bn9oB8lY7uilGqjBXo37e443KBnEyFRvgoDASguodvB0w0k2xC6pSPYVhWaL0WjS000AvxrArur');
-        
-        // Add user metadata
-        const metadata = {
-          user_id: session.user.id
-        };
-        button.setAttribute('client-reference-id', session.user.id);
-        button.setAttribute('metadata', JSON.stringify(metadata));
-
-        // Replace any existing button
-        const container = document.getElementById('stripe-button-container');
-        if (container) {
-          container.innerHTML = '';
-          container.appendChild(button);
-        }
-      };
-    };
-
-    initializeStripeButton();
-
-    return () => {
-      // Cleanup script on unmount
-      const script = document.querySelector('script[src*="buy-button.js"]');
-      if (script) {
-        script.remove();
+      if (!session?.user) {
+        alert('Please sign in first to subscribe.');
+        return;
       }
-    };
-  }, []);
 
-  return <div id="stripe-button-container" className="w-full flex justify-center" />;
-} 
+      // Use API-based checkout
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const { sessionId } = await response.json();
+      
+      // Redirect to Stripe Checkout
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+      
+      if (!stripe) {
+        throw new Error('Stripe failed to load');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId,
+      });
+
+      if (error) {
+        console.error('Stripe redirect error:', error);
+        alert('Something went wrong with the payment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleSubscribe}
+      disabled={loading}
+      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-6 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {loading ? 'Processing...' : 'Subscribe Now - $4.99'}
+    </button>
+  );
+};
+
+export default SubscribeButton; 

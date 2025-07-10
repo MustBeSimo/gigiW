@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -21,43 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const getInitialSession = async () => {
       try {
         setLoading(true);
+        
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        if (error) {
+          console.error('AuthContext: Session error:', error);
+          throw error;
+        }
         
         if (session) {
           setSession(session);
           setUser(session.user);
-
-          // Initialize user profile if needed
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert(
-              { 
-                id: session.user.id,
-                email: session.user.email,
-                full_name: session.user.user_metadata?.full_name,
-                avatar_url: session.user.user_metadata?.avatar_url,
-                updated_at: new Date().toISOString()
-              },
-              { onConflict: 'id' }
-            );
-          if (profileError) console.error('Error updating profile:', profileError);
-
-          // Check and handle code parameter in URL
-          const urlParams = new URLSearchParams(window.location.search);
-          const code = urlParams.get('code');
-          if (code) {
-            // Clean URL without reloading the page
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('code');
-            window.history.replaceState({}, '', newUrl.toString());
-          }
         }
       } catch (error) {
         console.error('Error in auth:', error);
@@ -72,23 +50,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
-
-        if (session?.user) {
-          // Update profile on auth state change
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert(
-              { 
-                id: session.user.id,
-                email: session.user.email,
-                full_name: session.user.user_metadata?.full_name,
-                avatar_url: session.user.user_metadata?.avatar_url,
-                updated_at: new Date().toISOString()
-              },
-              { onConflict: 'id' }
-            );
-          if (profileError) console.error('Error updating profile:', profileError);
+        
+        // Only initialize profile and balance for new users on fresh sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Keep loading true while initializing user data
+          setLoading(true);
+          await initializeUserData(session.user);
+          setLoading(false);
+        } else {
+          // For other events (like existing sessions), set loading to false
+          setLoading(false);
         }
       }
     );
@@ -98,17 +69,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase]);
 
+  const initializeUserData = async (user: User) => {
+    try {
+      // Initialize user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name,
+            avatar_url: user.user_metadata?.avatar_url,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+      if (profileError) {
+        console.error('Error creating/updating profile:', profileError);
+      }
+
+      // Initialize balance if needed (only for new users)
+      const { data: existingBalance } = await supabase
+        .from('user_balances')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingBalance) {
+        const { error: balanceError } = await supabase
+          .from('user_balances')
+          .insert({
+            user_id: user.id,
+            balance: 20, // Give 20 free messages to new users
+            mood_checkins_remaining: 10, // Give 10 free mood check-ins
+            updated_at: new Date().toISOString(),
+          });
+
+        if (balanceError) {
+          console.error('Error initializing balance:', balanceError);
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing user data:', error);
+      // Don't throw - let the user continue even if initialization fails
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/api/auth/callback`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
           },
-          skipBrowserRedirect: false // Ensure browser handles redirect
         }
       });
       
@@ -122,7 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true);
-      console.log('Starting sign out process...');
       
       // Reset user state immediately for better UX
       setUser(null);
@@ -131,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Call the server-side API to clear cookies properly
       try {
         await fetch('/api/auth/signout', { method: 'POST' });
-        console.log('Server-side sign out successful');
       } catch (serverError) {
         console.warn('Server-side sign out failed, continuing with client-side:', serverError);
       }
@@ -142,8 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Client-side sign out error:', error);
         // Don't throw here - continue with logout process
       }
-      
-      console.log('Sign out completed successfully');
       
       // Force reload to ensure all state is cleared
       window.location.href = '/';

@@ -17,7 +17,14 @@ interface Avatar {
 
 interface ChatCardProps {
   className?: string;
-  user?: any;
+  user?: {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      full_name?: string;
+      avatar_url?: string;
+    };
+  };
   balance?: number | null;
   selectedAvatar?: Avatar;
 }

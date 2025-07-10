@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { authenticateApiRoute } from '@/utils/supabase-server';
+import { MoodLog, PeriodMoodReport } from '@/types/database';
+
+interface PeriodReportRequest {
+  period: string;
+  mood_data: MoodLog[];
+  start_date: string;
+  end_date: string;
+}
+
+interface MoodAnalysis {
+  averageMood: number;
+  moodRange: {
+    min: number;
+    max: number;
+  };
+  mostCommonEmoji: string;
+  trend: string;
+  moodSummary: string;
+  totalEntries: number;
+}
 
 // Vercel-specific configurations
 export const runtime = 'nodejs';
@@ -289,7 +310,7 @@ Example format:
   }
 }
 
-async function generatePeriodReport(body: any) {
+async function generatePeriodReport(body: PeriodReportRequest) {
   const { period, mood_data, start_date, end_date } = body;
   
   if (!mood_data || mood_data.length === 0) {
@@ -302,7 +323,7 @@ async function generatePeriodReport(body: any) {
   const analysis = analyzeMoodData(mood_data);
   
   // Create comprehensive period report
-  const periodReport = {
+  const periodReport: PeriodMoodReport = {
     overview: `Over the past ${period}, you've been tracking your emotional wellness with ${mood_data.length} entries. Your average mood was ${analysis.averageMood.toFixed(1)}/10, showing ${analysis.trend} patterns.`,
     insights: [
       `Your most common mood was ${analysis.mostCommonEmoji}`,
@@ -326,9 +347,18 @@ async function generatePeriodReport(body: any) {
   return periodReport; // Return the data directly, not wrapped in NextResponse
 }
 
-function analyzeMoodData(moodData: any[]) {
-  const ratings = moodData.map(entry => entry.mood_rating);
-  const emojis = moodData.map(entry => entry.mood_emoji);
+function analyzeMoodData(moodData: MoodLog[]): MoodAnalysis {
+  // Filter out entries with null values for analysis
+  const validEntries = moodData.filter(entry => 
+    entry.mood_rating !== null && entry.mood_emoji !== null
+  );
+  
+  if (validEntries.length === 0) {
+    throw new Error('No valid mood data found');
+  }
+  
+  const ratings = validEntries.map(entry => entry.mood_rating!);
+  const emojis = validEntries.map(entry => entry.mood_emoji!);
   
   // Calculate statistics
   const averageMood = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
@@ -361,7 +391,7 @@ function analyzeMoodData(moodData: any[]) {
   }
   
   // Create mood summary
-  const moodSummary = moodData.slice(0, 5).map(entry => 
+  const moodSummary = validEntries.slice(0, 5).map(entry => 
     `${entry.mood_emoji} (${entry.mood_rating}/10)${entry.mood_note ? `: ${entry.mood_note.substring(0, 50)}...` : ''}`
   ).join('\n');
   
@@ -371,6 +401,6 @@ function analyzeMoodData(moodData: any[]) {
     mostCommonEmoji,
     trend,
     moodSummary,
-    totalEntries: moodData.length
+    totalEntries: validEntries.length
   };
 } 

@@ -37,7 +37,7 @@ export default function ThoughtRecordGuide() {
   });
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const updateData = (field: keyof ThoughtRecordData, value: any) => {
+  const updateData = (field: keyof ThoughtRecordData, value: string) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
 

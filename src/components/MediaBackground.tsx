@@ -1,12 +1,13 @@
-// MediaBackground.tsx – v10  (double stripe height)
+// MediaBackground.tsx – v11  (with dynamic GSAP imports)
 // ---------------------------------------------------------------------
 // • Stripes now twice as tall: 22 vh desktop, 20 vh mobile
+// • Added loading state to prevent layout shifts
+// • Dynamic GSAP imports for better bundle splitting
 // ---------------------------------------------------------------------
 
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
 import { cn } from '@/utils/cn'
 
 /* ─── Tunables ─────────────────────────────────────────────── */
@@ -44,16 +45,42 @@ const fillRow = (items: MediaItem[], cardW: number, vw: number) => {
 export default function MediaBackground ({ className }: Props) {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [rows, setRows]   = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [gsapLoaded, setGsapLoaded] = useState(false)
   const rowHRef           = useRef<number>(DESKTOP_ROW_H)
   const rowRefs           = useRef<HTMLDivElement[]>([])
-  const tlRefs            = useRef<gsap.core.Timeline[]>([])
+  const tlRefs            = useRef<any[]>([])
+
+  // Dynamic GSAP import
+  useEffect(() => {
+    const loadGsap = async () => {
+      try {
+        const { gsap } = await import('gsap')
+        // Store gsap reference for later use
+        ;(window as any).__gsap = gsap
+        setGsapLoaded(true)
+      } catch (error) {
+        console.error('Failed to load GSAP:', error)
+        setGsapLoaded(false)
+      }
+    }
+    
+    loadGsap()
+  }, [])
 
   /* Fetch */
   useEffect(() => {
+    setIsLoading(true)
     fetch('/api/media')
       .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then(d => setMedia(d.items ?? []))
-      .catch(console.error)
+      .then(d => {
+        setMedia(d.items ?? [])
+        setIsLoading(false)
+      })
+      .catch(e => {
+        console.error(e)
+        setIsLoading(false)
+      })
   }, [])
 
   /* Layout on resize */
@@ -70,7 +97,10 @@ export default function MediaBackground ({ className }: Props) {
 
   /* Build rows */
   useEffect(() => {
-    if (!media.length || !rows) return
+    if (!media.length || !rows || !gsapLoaded) return
+
+    const gsap = (window as any).__gsap
+    if (!gsap) return
 
     const vw      = window.innerWidth
     const ROW_H   = rowHRef.current
@@ -111,12 +141,12 @@ export default function MediaBackground ({ className }: Props) {
           img.className = 'w-full h-full object-cover'
           // Priority-load first 2 images in first row
           if (idx === 0 && i < 2) {
-  img.loading = 'eager'; // Only 'eager' or 'lazy' allowed
-  (img as any).fetchPriority = 'high';
-} else {
-  img.loading = 'lazy';
-  (img as any).fetchPriority = 'auto';
-}
+            img.loading = 'eager';
+            (img as any).fetchPriority = 'high';
+          } else {
+            img.loading = 'lazy';
+            (img as any).fetchPriority = 'auto';
+          }
           holder.appendChild(img)
         }
         row.appendChild(holder)
@@ -133,7 +163,6 @@ export default function MediaBackground ({ className }: Props) {
         }
       }, { rootMargin: '600px' });
       rowIO.observe(row);
-
 
       const dir  = idx % 2 ? 1 : -1
       const dist = row.scrollWidth
@@ -171,10 +200,38 @@ export default function MediaBackground ({ className }: Props) {
       
       tlRefs.current[idx] = tl
     })
-  }, [media, rows])
+  }, [media, rows, gsapLoaded])
 
   /* Render */
   const ROW_H = rowHRef.current
+
+  if (isLoading || !gsapLoaded) {
+    return (
+      <div id="bg-marquee" className={cn('fixed inset-0 z-0', className)}>
+        <div className="relative w-full h-full overflow-hidden">
+          {/* Loading skeleton */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/20"></div>
+            
+            {/* Animated loading bars */}
+            <div className="absolute inset-0 flex flex-col">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 border-b border-gray-200 dark:border-gray-700 relative overflow-hidden"
+                >
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  ></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div id="bg-marquee" className={cn('fixed inset-0 z-0', className)}>

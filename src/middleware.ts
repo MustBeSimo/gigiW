@@ -2,48 +2,82 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Constants moved outside function for better performance
+const PUBLIC_ROUTES = new Set([
+  '/',
+  '/login',
+  '/privacy',
+  '/terms',
+  '/subscribe'
+]);
+
+const PUBLIC_API_PREFIXES = [
+  '/api/public/',
+  '/api/horoscope',
+  '/api/generate-pdf'
+];
+
+// Helper function to check if route is public
+function isPublicRoute(pathname: string): boolean {
+  // Check exact matches first (fastest)
+  if (PUBLIC_ROUTES.has(pathname)) {
+    return true;
+  }
+  
+  // Check API prefixes
+  return PUBLIC_API_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
+
+// Helper function to check if route requires authentication
+function requiresAuth(pathname: string): boolean {
+  // Auth routes handle their own authentication
+  if (pathname.startsWith('/api/auth/')) {
+    return false;
+  }
+  
+  // Webhook routes don't have user sessions
+  if (pathname.startsWith('/api/webhooks/')) {
+    return false;
+  }
+  
+  return pathname.startsWith('/api/') && !isPublicRoute(pathname);
+}
+
 export async function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
+  
+  // Early return for public routes - no auth check needed
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
   try {
-    // Refresh session if expired
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+    // Only refresh session for routes that might need authentication
+    const { data: { session }, error } = await supabase.auth.getSession();
 
-    // Handle authentication callback
-    if (req.nextUrl.pathname === '/auth/callback') {
-      return res;
-    }
-
-    // Define public routes that don't require authentication
-    const publicRoutes = ['/', '/login', '/api/public/', '/api/horoscope', '/api/mood-report', '/api/generate-pdf'];
-    const isPublicRoute = publicRoutes.some(route => 
-      req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(route)
-    );
-
-    // If there was an error refreshing the session and it's not a public route
-    if (error && !isPublicRoute) {
+    // Handle session errors
+    if (error) {
       console.error('Session error:', error);
       
-      // If it's an API route, return a 401
-      if (req.nextUrl.pathname.startsWith('/api/')) {
+      // For API routes, return JSON error
+      if (pathname.startsWith('/api/')) {
         return NextResponse.json(
           { error: 'Session expired. Please sign in again.' },
           { status: 401 }
         );
       }
       
-      // For non-API routes, redirect to login
+      // For protected pages, redirect to login
       const redirectUrl = new URL('/login', req.url);
       redirectUrl.searchParams.set('error', 'Session expired. Please sign in again.');
       return NextResponse.redirect(redirectUrl);
     }
 
-    // For API routes that require authentication
-    if (req.nextUrl.pathname.startsWith('/api/') && !session && !isPublicRoute) {
+    // Check authentication requirement for API routes
+    if (requiresAuth(pathname) && !session) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -53,22 +87,31 @@ export async function middleware(req: NextRequest) {
     return res;
   } catch (error) {
     console.error('Middleware error:', error);
-    // In case of any error, allow the request to proceed
-    // The client-side auth check will handle the session state
+    
+    // For critical API routes, return error instead of allowing through
+    if (requiresAuth(pathname)) {
+      return NextResponse.json(
+        { error: 'Authentication service unavailable' },
+        { status: 503 }
+      );
+    }
+    
+    // For other routes, allow request to proceed
     return res;
   }
 }
 
-// Specify which routes should be handled by the middleware
+// Optimized matcher - exclude more static assets and reduce processing
 export const config = {
   matcher: [
     /*
      * Match all request paths except:
      * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
+     * - _next/image (image optimization files)  
+     * - favicon.ico, sw.js (PWA files)
+     * - public folder assets
+     * - API routes that don't need auth checking
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|workbox-.*\\.js|manifest.json|icons/|images/).*)',
   ],
 }; 

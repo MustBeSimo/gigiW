@@ -8,31 +8,35 @@ import TypewriterText from '@/components/TypewriterText';
 import FAQCard from '@/components/FAQCard';
 import Hero from '@/components/Hero';
 import DemoChat from '@/components/DemoChat';
-import UpsellBanner from '@/components/UpsellBanner';
+import Footer from '@/components/Footer';
 const GuideCard = React.lazy(() => import('@/components/GuideCard'));
 const ChatCard = React.lazy(() => import('@/components/ChatCard'));
 const WeatherHoroscopeCard = React.lazy(() => import('@/components/WeatherHoroscopeCard'));
+const MoodCheckinCard = React.lazy(() => import('@/components/MoodCheckinCard'));
+const UpsellBanner = React.lazy(() => import('@/components/UpsellBanner'));
 import { fetchSocialLinks } from '@/utils/clientSocialLinks';
 import { SocialLink } from '@/utils/socialLinks';
-
-import MoodCheckinCard from '@/components/MoodCheckinCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Profile } from '@/types/database';
 
 export default function HomePage() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [buying, setBuying] = useState(false);
+  const [buyingPlus, setBuyingPlus] = useState(false);
+  const [buyingPro, setBuyingPro] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<'gigi' | 'vee' | 'lumo'>('gigi');
   const [isDemoChatOpen, setIsDemoChatOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { user, loading, signInWithGoogle, signOut } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,6 +95,46 @@ export default function HomePage() {
       window.history.replaceState({}, '', newUrl.toString());
     }
 
+    // Handle successful purchase
+    const success = searchParams.get('success');
+    if (success === 'true') {
+      setSuccessMessage('🎉 Payment successful! Your messages and mood check-ins have been added to your account.');
+      
+      // Clean URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('success');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Refresh balance if user is signed in
+      if (user) {
+        setTimeout(() => {
+          fetchUserBalance();
+        }, 1000); // Give webhook time to process
+      }
+    }
+
+    // Handle cancelled purchase
+    const cancelled = searchParams.get('canceled');
+    if (cancelled === 'true') {
+      setSuccessMessage('❌ Purchase was cancelled. No charges were made.');
+      
+      // Clean URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('canceled');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    // Handle authentication errors
+    const authError = searchParams.get('error');
+    if (authError === 'auth_error') {
+      setSuccessMessage('❌ Sign in failed. Please try again.');
+      
+      // Clean URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('error');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
     // Set chat visible when user is signed in
     if (user) {
       setIsChatVisible(true);
@@ -106,28 +150,34 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, [searchParams, user, isClient]);
 
+  // Function to fetch user balance
+  const fetchUserBalance = async () => {
+    if (!user) return;
+    
+    setBalanceLoading(true);
+    try {
+      const response = await fetch('/api/balance');
+      const data = await response.json();
+      setBalance(data.balance);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
   // Fetch balance when user is available
   useEffect(() => {
     if (user) {
-      const fetchBalance = async () => {
-        try {
-          const response = await fetch('/api/balance');
-          const data = await response.json();
-          setBalance(data.balance);
-        } catch (error) {
-          console.error('Error fetching balance:', error);
-        }
-      };
-      fetchBalance();
+      fetchUserBalance();
 
       // Fetch user profile from Supabase
-      const supabase = createClientComponentClient();
       supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
-        .then(({ data }) => setUserProfile(data));
+        .then(({ data }: { data: Profile | null }) => setUserProfile(data));
     }
   }, [user]);
 
@@ -141,18 +191,55 @@ export default function HomePage() {
     loadSocialLinks();
   }, []);
 
-  const handleBuy = async () => {
-    setBuying(true);
+  const handleBuyPlus = async () => {
+    // Check if user is signed in
+    if (!user) {
+      alert('Please sign in first to purchase the Plus plan. Click the "Sign In" button at the top right.');
+      return;
+    }
+
+    setBuyingPlus(true);
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' });
-      const { sessionId } = await res.json();
+      // Use API-based checkout instead of direct Stripe URL
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const { sessionId } = await response.json();
+      
+      // Redirect to Stripe Checkout
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      await stripe?.redirectToCheckout({ sessionId });
+      
+      if (!stripe) {
+        throw new Error('Stripe failed to load');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId,
+      });
+
+      if (error) {
+        console.error('Stripe redirect error:', error);
+        alert('Something went wrong with the payment. Please try again.');
+      }
     } catch (error) {
       console.error('Error during checkout:', error);
+      alert('Something went wrong. Please try again.');
     } finally {
-      setBuying(false);
+      setBuyingPlus(false);
     }
+  };
+
+  const handleBuyPro = async () => {
+    // Pro plan is not implemented yet
+    alert('Pro plan is coming soon! Please try the Plus plan for now.');
   };
 
   const handleStartDemo = () => {
@@ -210,8 +297,27 @@ export default function HomePage() {
 
   const colorScheme = getAvatarColorScheme(selectedAvatar);
 
+  // Check for success parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'true') {
+      // Show success message and refresh balance
+      setShowSuccess(true);
+      
+      // Refresh user balance after successful purchase
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+  }, []);
+
+  // Success message state
+  const [showSuccess, setShowSuccess] = useState(false);
+
   return (
-    <main className={`relative min-h-screen w-full ${colorScheme.bgPrimary}`}>
+    <main className={`relative min-h-screen w-full ${getAvatarColorScheme(selectedAvatar).bgPrimary}`}>
       {/* Sidebar for Weather/Horoscope - Mobile Optimized */}
       <div className={`fixed inset-y-0 right-0 w-full sm:w-96 max-w-sm bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 z-40 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
@@ -256,8 +362,16 @@ export default function HomePage() {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Mind Gleam</h1>
               {user && balance !== null && (
                 <div className="bg-white/80 dark:bg-gray-800/80 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium ml-auto sm:ml-0">
-                  <span className="text-gray-600 dark:text-gray-400">Credits: </span>
+                  <span className="text-gray-600 dark:text-gray-400">Messages: </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">{balance}</span>
+                  {user.email && (
+                    <>
+                      <span className="text-gray-400 mx-2">•</span>
+                      <span className="text-gray-600 dark:text-gray-400 truncate max-w-[120px] sm:max-w-none" title={user.email}>
+                        {user.email}
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -270,26 +384,36 @@ export default function HomePage() {
                   className="p-2.5 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200"
                   title="Weather & Horoscope"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" opacity="0.4"/>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6.5 20q-2.28 0-3.89-1.57Q1 16.86 1 14.58q0-1.95 1.17-3.48q1.18-1.52 3.08-1.95q.55-2.27 2.39-3.71Q9.68 4 12 4t4.36 1.44q1.84 1.44 2.39 3.71q1.9.43 3.08 1.95Q23 12.63 23 14.58q0 2.28-1.61 3.85Q19.78 20 17.5 20H6.5Z"/>
                   </svg>
                 </button>
-                
-                {user && (
+                {user ? (
                   <button
                     onClick={signOut}
-                    className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 text-sm font-medium"
+                    className="px-3 py-2 sm:px-4 sm:py-2 bg-white/70 dark:bg-gray-800/70 rounded-lg text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 text-sm font-medium"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span className="hidden sm:inline">Sign Out</span>
+                    Sign Out
+                  </button>
+                ) : (
+                  <button
+                    onClick={signInWithGoogle}
+                    className="px-3 py-2 sm:px-4 sm:py-2 bg-white/70 dark:bg-gray-800/70 rounded-lg text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 text-sm font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Sign In'}
                   </button>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-600 rounded-lg">
+              <p className="text-green-800 dark:text-green-200">{successMessage}</p>
+            </div>
+          )}
 
           {/* Hero Section */}
           <section className="mb-12 lg:mb-16">
@@ -300,13 +424,11 @@ export default function HomePage() {
             />
           </section>
 
-
-
           {/* Upsell Banners - Contextual */}
           <UpsellBanner 
             trigger="low-balance" 
             balance={balance || 0}
-            onUpgrade={() => handleBuy()}
+            onUpgrade={() => handleBuyPlus()}
           />
           
           {!user && (
@@ -319,9 +441,9 @@ export default function HomePage() {
           {/* Chat Section for Authenticated Users */}
           {user && isChatVisible && (
             <section className="mb-12 lg:mb-16">
-              <div className={`bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg border-2 ${colorScheme.borderColor}`}>
+              <div className={`bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg border-2 ${getAvatarColorScheme(selectedAvatar).borderColor}`}>
                 <div className="flex items-center justify-center gap-3 mb-8">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${colorScheme.gradient} p-1`}>
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarColorScheme(selectedAvatar).gradient} p-1`}>
                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                       <Image
                         src={currentAvatar.src}
@@ -332,12 +454,16 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
-                  <h2 className={`text-2xl font-bold ${colorScheme.textColor}`}>
+                  <h2 className={`text-2xl font-bold ${getAvatarColorScheme(selectedAvatar).textColor}`}>
                     Chat with {currentAvatar.name}
                   </h2>
                 </div>
                 <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
-                  <ChatCard />
+                  <ChatCard 
+                    user={user}
+                    balance={balance}
+                    selectedAvatar={currentAvatar}
+                  />
                 </Suspense>
               </div>
             </section>
@@ -345,9 +471,9 @@ export default function HomePage() {
 
           {/* Mood Check-in Section */}
           <section className="mb-12 lg:mb-16">
-            <div className={`bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg border-2 ${colorScheme.borderColor}`}>
+            <div className={`bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg border-2 ${getAvatarColorScheme(selectedAvatar).borderColor}`}>
               <div className="flex items-center justify-center gap-3 mb-8">
-                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${colorScheme.gradient} p-1`}>
+                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarColorScheme(selectedAvatar).gradient} p-1`}>
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                     <Image
                       src={currentAvatar.src}
@@ -358,7 +484,7 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-                <h2 className={`text-2xl font-bold ${colorScheme.textColor}`}>
+                <h2 className={`text-2xl font-bold ${getAvatarColorScheme(selectedAvatar).textColor}`}>
                   Daily Mood Check-in
                 </h2>
               </div>
@@ -366,11 +492,13 @@ export default function HomePage() {
               {/* Mood Chain Upsell */}
               <UpsellBanner 
                 trigger="mood-chain"
-                onUpgrade={() => handleBuy()}
+                onUpgrade={() => handleBuyPlus()}
               />
               
               <div className="max-w-md mx-auto">
-                <MoodCheckinCard />
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
+                  <MoodCheckinCard />
+                </Suspense>
               </div>
             </div>
           </section>
@@ -430,7 +558,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Plus</h3>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$4.99</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">200 messages + 30 mood check-ins and reports</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">200 messages + 60 mood check-ins and reports</p>
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -451,14 +579,26 @@ export default function HomePage() {
                       <span>Priority support</span>
                     </li>
                   </ul>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">Valid until expires</p>
+                  <div className="mt-4">
+                    <button
+                      onClick={handleBuyPlus}
+                      disabled={buyingPlus}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 ${
+                        buyingPlus
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-lg hover:shadow-xl'
+                      }`}
+                    >
+                      {buyingPlus ? 'Processing...' : 'Get Plus'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Pro Plan */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 h-fit">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Pro</h3>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">$9.99</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Unlimited messages and mood check-ins and reports</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">500 messages + 150 mood check-ins and reports</p>
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -466,8 +606,28 @@ export default function HomePage() {
                       </svg>
                       <span>Everything in Plus</span>
                     </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Advanced analytics</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Unlimited access</span>
+                    </li>
                   </ul>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">Valid one month</p>
+                  <div className="mt-4">
+                    <button
+                      onClick={handleBuyPro}
+                      disabled={true}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 bg-gray-400 cursor-not-allowed text-white`}
+                    >
+                      Coming Soon
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -479,130 +639,18 @@ export default function HomePage() {
               <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
                 Frequently Asked Questions
               </h2>
-              <div className="max-w-4xl mx-auto">
-                <FAQCard />
+              <div className="max-w-3xl mx-auto">
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-48 rounded-lg"></div>}>
+                  <FAQCard />
+                </Suspense>
               </div>
             </div>
           </section>
 
-                     {/* Social Links Section */}
-           <section className="mb-12 lg:mb-16">
-             <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 shadow-lg">
-               <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
-                 Connect with Us
-               </h2>
-               <div className="max-w-md mx-auto">
-                 <SocialLinks links={socialLinks} />
-               </div>
-             </div>
-           </section>
-
-          {/* Medical Disclaimer */}
-          <section className="mb-12 lg:mb-16">
-            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl p-6 sm:p-8 shadow-lg border-2 border-orange-200 dark:border-orange-600">
-              <div className="flex items-start gap-4">
-                <div className="text-4xl shrink-0">
-                  ⚠️
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-red-800 dark:text-red-200 mb-4">
-                    Important Medical Disclaimer
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-6">
-                    Please read carefully before using our services
-                  </p>
-                  
-                  <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 sm:p-6 border border-orange-200 dark:border-orange-600">
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg sm:text-xl font-bold text-red-800 dark:text-red-200 mb-2">
-                        IMPORTANT MEDICAL DISCLAIMER
-                      </h3>
-                      <p className="text-sm sm:text-base font-semibold text-red-700 dark:text-red-300">
-                        Mind Gleam is NOT a substitute for professional medical care, therapy, or psychiatric treatment.
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      {/* What We Are NOT */}
-                      <div className="space-y-3">
-                        <h4 className="flex items-center gap-2 text-red-700 dark:text-red-300 font-semibold">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                          What We Are NOT:
-                        </h4>
-                        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                          <li>• Medical professionals or therapists</li>
-                          <li>• A replacement for professional treatment</li>
-                          <li>• Able to diagnose or treat mental health conditions</li>
-                          <li>• Equipped to handle crisis situations</li>
-                        </ul>
-                      </div>
-                      
-                      {/* What We ARE */}
-                      <div className="space-y-3">
-                        <h4 className="flex items-center gap-2 text-green-700 dark:text-green-300 font-semibold">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          What We ARE:
-                        </h4>
-                        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                          <li>• Educational AI-powered wellness support</li>
-                          <li>• CBT-based thought coaching tools</li>
-                          <li>• Mood tracking and journaling assistance</li>
-                          <li>• Complementary wellness resources</li>
-                        </ul>
-                      </div>
-                    </div>
-                    
-                    {/* Crisis Resources */}
-                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-6">
-                      <h4 className="flex items-center gap-2 text-red-800 dark:text-red-200 font-semibold mb-3">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        CRISIS RESOURCES:
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="font-semibold text-red-700 dark:text-red-300">US:</span>
-                          <span className="text-red-600 dark:text-red-400"> 988 (Suicide & Crisis Lifeline)</span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-red-700 dark:text-red-300">Australia:</span>
-                          <span className="text-red-600 dark:text-red-400"> 13 11 14 (Lifeline)</span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-red-700 dark:text-red-300">UK:</span>
-                          <span className="text-red-600 dark:text-red-400"> 116 123 (Samaritans)</span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-red-700 dark:text-red-300">Emergency:</span>
-                          <span className="text-red-600 dark:text-red-400"> 911, 000, 999</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-red-700 dark:text-red-300">
-                        Ages 18+ only. By using this service, you acknowledge this disclaimer and agree to seek professional help when needed.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Footer */}
+          <Footer />
         </div>
       </div>
-
-      {/* Demo Chat Modal */}
-      <DemoChat 
-        isOpen={isDemoChatOpen}
-        onClose={() => setIsDemoChatOpen(false)}
-        selectedAvatar={selectedAvatar}
-      />
     </main>
   );
-} 
+}

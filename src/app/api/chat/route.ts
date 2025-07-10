@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { authenticateApiRoute, ErrorResponses } from '@/utils/supabase-server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Set max duration to 30 seconds
@@ -55,16 +54,10 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 }
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const { response, session, supabase } = await authenticateApiRoute();
+  if (response) return response;
 
   try {
-    // Get the current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get user's balance
     const { data: balanceData, error: balanceError } = await supabase
       .from('user_balances')
@@ -74,14 +67,11 @@ export async function POST(request: Request) {
 
     if (balanceError) {
       console.error('Error fetching balance:', balanceError);
-      return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 500 });
+      return ErrorResponses.serverError('Failed to fetch balance');
     }
 
     if (!balanceData || balanceData.balance <= 0) {
-      return NextResponse.json(
-        { error: 'Insufficient balance. Please purchase more messages.' },
-        { status: 402 }
-      );
+      return ErrorResponses.paymentRequired('Insufficient balance. Please purchase more messages.');
     }
 
     // Parse the request body
@@ -89,7 +79,7 @@ export async function POST(request: Request) {
     const userMessages = body.messages || [];
 
     if (!Array.isArray(userMessages) || userMessages.length === 0) {
-      return NextResponse.json({ error: 'Invalid message format' }, { status: 400 });
+      return ErrorResponses.badRequest('Invalid message format. Expected array of messages.');
     }
 
     // Format messages for the Together API
@@ -125,7 +115,7 @@ export async function POST(request: Request) {
       const errorData = await llmResponse.json().catch(() => ({ error: 'Unknown error' }));
       console.error('LLM API error:', errorData);
       
-      // Return fallback response instead of error
+      // Return fallback response instead of error for better UX
       return NextResponse.json({
         message: "I'm here to support you on your mental wellness journey. Sometimes I might take a moment to respond, but I'm always ready to listen and help you explore your thoughts and feelings. What's on your mind today?",
         remaining_balance: balanceData.balance - 1,
@@ -146,7 +136,7 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error('Error updating balance:', updateError);
-      return NextResponse.json({ error: 'Failed to update balance' }, { status: 500 });
+      return ErrorResponses.serverError('Failed to update balance');
     }
 
     console.log('Together AI request successful');
@@ -158,18 +148,15 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in chat endpoint:', error);
     
-    // Check if it's a timeout or abort error
+    // Handle specific error types
     if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
       return NextResponse.json({
         message: "I'm experiencing some technical difficulties right now, but I'm here to support you. Let me know what's on your mind, and I'll do my best to help you explore your thoughts and feelings.",
-        remaining_balance: (await supabase.from('user_balances').select('balance').eq('user_id', (await supabase.auth.getSession()).data.session?.user.id).single()).data?.balance || 0,
+        remaining_balance: (await supabase.from('user_balances').select('balance').eq('user_id', session.user.id).single()).data?.balance || 0,
         fallback: true
       });
     }
     
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return ErrorResponses.serverError(error instanceof Error ? error.message : 'Chat service unavailable');
   }
 }

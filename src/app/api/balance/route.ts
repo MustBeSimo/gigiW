@@ -1,20 +1,13 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { authenticateApiRoute, ErrorResponses } from '@/utils/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
+  const { response, session, supabase } = await authenticateApiRoute();
+  if (response) return response;
 
   try {
-    // Get the current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get user balance including mood check-ins
     const { data: balanceData, error: balanceError } = await supabase
       .from('user_balances')
@@ -22,9 +15,10 @@ export async function GET() {
       .eq('user_id', session.user.id)
       .single();
 
-    if (balanceError) {
+    // Check if there's an error that's not "no rows found"
+    if (balanceError && (balanceError as any).code !== 'PGRST116') {
       console.error('Error fetching balance:', balanceError);
-      return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 500 });
+      return ErrorResponses.serverError('Failed to fetch balance');
     }
 
     // If no balance record exists, create one with initial balance
@@ -34,8 +28,8 @@ export async function GET() {
         .insert([
           {
             user_id: session.user.id,
-            balance: 50, // Initial balance for new users
-            mood_checkins_remaining: 10, // Initial mood check-ins for new users
+            balance: 20,
+            mood_checkins_remaining: 10,
             updated_at: new Date().toISOString(),
           },
         ])
@@ -44,11 +38,11 @@ export async function GET() {
 
       if (insertError) {
         console.error('Error creating balance:', insertError);
-        return NextResponse.json({ error: 'Failed to create balance' }, { status: 500 });
+        return ErrorResponses.serverError('Failed to create balance');
       }
 
       return NextResponse.json({ 
-        balance: newBalance?.balance ?? 50,
+        balance: newBalance?.balance ?? 20,
         moodCheckins: newBalance?.mood_checkins_remaining ?? 10
       });
     }
@@ -59,67 +53,60 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error in balance route:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return ErrorResponses.serverError();
   }
 }
 
-// POST method to deduct mood check-in
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const { response, session, supabase } = await authenticateApiRoute();
+  if (response) return response;
 
   try {
     const { action } = await request.json();
     
-    // Get the current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (action !== 'deduct_mood_checkin') {
+      return ErrorResponses.badRequest('Invalid action. Expected "deduct_mood_checkin"');
     }
 
-    if (action === 'deduct_mood_checkin') {
-      // Get current balance
-      const { data: currentBalance, error: fetchError } = await supabase
-        .from('user_balances')
-        .select('mood_checkins_remaining')
-        .eq('user_id', session.user.id)
-        .single();
+    // Get current balance
+    const { data: currentBalance, error: fetchError } = await supabase
+      .from('user_balances')
+      .select('mood_checkins_remaining')
+      .eq('user_id', session.user.id)
+      .single();
 
-      if (fetchError) {
-        console.error('Error fetching current balance:', fetchError);
-        return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 500 });
-      }
-
-      if (!currentBalance || currentBalance.mood_checkins_remaining <= 0) {
-        return NextResponse.json({ error: 'Insufficient mood check-ins' }, { status: 402 });
-      }
-
-      // Deduct one mood check-in
-      const { data: updatedBalance, error: updateError } = await supabase
-        .from('user_balances')
-        .update({ 
-          mood_checkins_remaining: currentBalance.mood_checkins_remaining - 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', session.user.id)
-        .select('balance, mood_checkins_remaining')
-        .single();
-
-      if (updateError) {
-        console.error('Error updating balance:', updateError);
-        return NextResponse.json({ error: 'Failed to update balance' }, { status: 500 });
-      }
-
-      return NextResponse.json({ 
-        balance: updatedBalance.balance,
-        moodCheckins: updatedBalance.mood_checkins_remaining,
-        success: true
-      });
+    if (fetchError) {
+      console.error('Error fetching current balance:', fetchError);
+      return ErrorResponses.serverError('Failed to fetch balance');
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    if (!currentBalance || currentBalance.mood_checkins_remaining <= 0) {
+      return ErrorResponses.paymentRequired('Insufficient mood check-ins');
+    }
+
+    // Deduct one mood check-in
+    const { data: updatedBalance, error: updateError } = await supabase
+      .from('user_balances')
+      .update({ 
+        mood_checkins_remaining: currentBalance.mood_checkins_remaining - 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', session.user.id)
+      .select('balance, mood_checkins_remaining')
+      .single();
+
+    if (updateError) {
+      console.error('Error updating balance:', updateError);
+      return ErrorResponses.serverError('Failed to update balance');
+    }
+
+    return NextResponse.json({ 
+      balance: updatedBalance.balance,
+      moodCheckins: updatedBalance.mood_checkins_remaining,
+      success: true
+    });
   } catch (error) {
     console.error('Error in balance POST route:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return ErrorResponses.serverError();
   }
 }

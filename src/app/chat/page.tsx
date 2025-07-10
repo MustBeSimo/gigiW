@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
 import Link from 'next/link';
+import { ChatErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function ChatPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -59,9 +59,11 @@ export default function ChatPage() {
   // Authenticated user
   return (
     <main className="container mx-auto min-h-screen p-4 flex items-start justify-center">
-      <div className="w-full max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6 text-center">Chat with Gigi</h1>
-      </div>
+      <ChatErrorBoundary>
+        <div className="w-full max-w-4xl">
+          <h1 className="text-2xl font-bold mb-6 text-center">Chat with Gigi</h1>
+        </div>
+      </ChatErrorBoundary>
     </main>
   );
 } 

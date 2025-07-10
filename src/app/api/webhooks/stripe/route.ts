@@ -1,8 +1,6 @@
-import { headers } from 'next/headers';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +17,13 @@ type StripeEvent = {
       id: string;
       customer: string;
       customer_email: string;
+      customer_details?: {
+        email?: string;
+      };
       payment_status?: string;
       status?: string;
       mode?: string;
+      client_reference_id?: string;
       metadata?: {
         user_id?: string;
       };
@@ -37,8 +39,26 @@ type StripeEvent = {
 }
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = headers().get('stripe-signature')!;
+  // Add comprehensive debugging
+  console.log('=== STRIPE WEBHOOK RECEIVED ===');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+  
+  // Get the raw body as buffer to preserve exact bytes for signature verification
+  const rawBody = await req.arrayBuffer();
+  const body = Buffer.from(rawBody);
+  console.log('Body length:', body.length);
+  console.log('Body preview:', body.toString().substring(0, 500) + '...');
+  
+  const signature = req.headers.get('stripe-signature');
+  console.log('Signature:', signature);
+  console.log('Webhook secret configured:', !!webhookSecret);
+  console.log('Webhook secret preview:', webhookSecret?.substring(0, 15) + '...');
+  
+  if (!signature) {
+    console.error('❌ No stripe-signature header found');
+    return NextResponse.json({ error: 'No stripe-signature header found' }, { status: 400 });
+  }
 
   let event: StripeEvent;
 
@@ -48,44 +68,118 @@ export async function POST(req: Request) {
       signature,
       webhookSecret
     ) as StripeEvent;
+    console.log('✅ Webhook signature verified successfully');
   } catch (err) {
-    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
+    console.error('❌ Webhook signature verification failed:', err);
+    console.error('❌ Error details:', err);
+    console.error('❌ Webhook secret configured:', !!webhookSecret);
+    console.error('❌ Webhook secret length:', webhookSecret?.length);
+    console.error('❌ Webhook secret starts with:', webhookSecret?.substring(0, 10) + '...');
+    console.error('❌ Signature received:', signature);
+    console.error('❌ Body length:', body.length);
+    console.error('❌ Body first 100 chars:', body.toString().substring(0, 100));
+    return NextResponse.json({ 
+      error: 'Webhook signature verification failed',
+      details: err instanceof Error ? err.message : String(err)
+    }, { status: 400 });
   }
 
-  const supabase = createRouteHandlerClient({ cookies });
+  console.log('=== WEBHOOK EVENT DETAILS ===');
+  console.log('Event type:', event.type);
+  console.log('Event ID:', event.data?.object?.id);
+  console.log('Event data keys:', Object.keys(event.data?.object || {}));
+  console.log('Full event data:', JSON.stringify(event.data, null, 2));
+
+  // Use service key for webhook authentication (no cookies available)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Test database connection
+  console.log('=== DATABASE CONNECTION TEST ===');
+  try {
+    const { data: testData, error: testError } = await supabase
+      .from('user_balances')
+      .select('count')
+      .limit(1);
+    
+    if (testError) {
+      console.error('❌ Database connection test failed:', testError);
+    } else {
+      console.log('✅ Database connection test successful');
+    }
+  } catch (dbTestError) {
+    console.error('❌ Database connection test error:', dbTestError);
+  }
 
   try {
     switch (event.type) {
+      case 'payment_link.updated': {
+        console.log('Payment link updated event received, ignoring...');
+        return NextResponse.json({ received: true });
+      }
+
       case 'checkout.session.completed': {
         const session = event.data.object;
+        console.log('Processing checkout.session.completed:', {
+          id: session.id,
+          payment_status: session.payment_status,
+          mode: session.mode,
+          customer_email: session.customer_email,
+          customer_details: session.customer_details,
+          client_reference_id: session.client_reference_id,
+          metadata: session.metadata
+        });
         
         // Verify payment status
         if (session.payment_status !== 'paid') {
+          console.error('Payment not completed, status:', session.payment_status);
           throw new Error('Payment not completed');
         }
 
-        // Get user from session metadata or email
-        let userId = session.metadata?.user_id;
+        // Get email from the correct location
+        const customerEmail = session.customer_email || session.customer_details?.email;
+        console.log('Customer email:', customerEmail);
+        
+        // Get user from client_reference_id, metadata, or email
+        let userId = session.client_reference_id || session.metadata?.user_id;
+        console.log('User ID from session:', userId);
         
         if (!userId) {
+          console.log('No user ID found, trying to find by email:', customerEmail);
+          
+          if (!customerEmail) {
+            console.error('No customer email found in session');
+            throw new Error('No customer email found in session');
+          }
+          
           // Try to find user by email
+          console.log('=== FINDING USER BY EMAIL ===');
           const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
           
           if (userError) {
-            throw new Error('Failed to fetch users');
+            console.error('Failed to fetch users:', userError);
+            throw new Error('Failed to fetch users: ' + userError.message);
           }
           
-          const user = userData.users.find(u => u.email === session.customer_email);
+          const user = userData.users.find((u: any) => u.email === customerEmail);
           if (!user) {
-            throw new Error('No user found for email: ' + session.customer_email);
+            console.error('No user found for email:', customerEmail);
+            throw new Error('No user found for email: ' + customerEmail);
           }
           
           userId = user.id;
+          console.log('Found user ID by email:', userId);
         }
 
         // Check if this is a one-time payment (mode: 'payment') or subscription
         if (session.mode === 'payment') {
+          console.log('=== PROCESSING ONE-TIME PAYMENT ===');
+          console.log('Processing one-time payment for user:', userId);
+          
           // One-time payment: Add 200 messages + 60 mood check-ins
+          console.log('Fetching current balance...');
           const { data: currentBalance, error: fetchError } = await supabase
             .from('user_balances')
             .select('balance, mood_checkins_remaining')
@@ -93,12 +187,17 @@ export async function POST(req: Request) {
             .single();
 
           if (fetchError && fetchError.code !== 'PGRST116') {
-            throw new Error('Failed to fetch current balance');
+            console.error('Failed to fetch current balance:', fetchError);
+            console.error('Error details:', JSON.stringify(fetchError, null, 2));
+            throw new Error('Failed to fetch current balance: ' + fetchError.message);
           }
 
+          console.log('Current balance:', currentBalance);
+
           if (currentBalance) {
+            console.log('Updating existing balance...');
             // Update existing balance
-            await supabase
+            const updateResult = await supabase
               .from('user_balances')
               .update({
                 balance: currentBalance.balance + 200,
@@ -106,18 +205,42 @@ export async function POST(req: Request) {
                 updated_at: new Date().toISOString(),
               })
               .eq('user_id', userId);
+
+            console.log('Balance update result:', updateResult);
+            
+            if (updateResult.error) {
+              console.error('Error updating balance:', updateResult.error);
+              console.error('Error details:', JSON.stringify(updateResult.error, null, 2));
+              throw new Error('Failed to update balance: ' + updateResult.error.message);
+            }
+            
+            console.log('✅ Successfully updated balance');
           } else {
+            console.log('Creating new balance record...');
             // Create new balance record
-            await supabase
+            const insertResult = await supabase
               .from('user_balances')
               .insert([{
                 user_id: userId,
-                balance: 250, // 50 initial + 200 purchased
+                balance: 220, // 20 initial + 200 purchased
                 mood_checkins_remaining: 70, // 10 initial + 60 purchased
                 updated_at: new Date().toISOString(),
               }]);
+
+            console.log('Balance insert result:', insertResult);
+            
+            if (insertResult.error) {
+              console.error('Error inserting balance:', insertResult.error);
+              console.error('Error details:', JSON.stringify(insertResult.error, null, 2));
+              throw new Error('Failed to insert balance: ' + insertResult.error.message);
+            }
+            
+            console.log('✅ Successfully created new balance');
           }
+          
+          console.log('✅ Successfully processed payment for user:', userId);
         } else {
+          console.log('Processing subscription payment for user:', userId);
           // Subscription payment: handle subscription logic
           const currentPeriodEnd = new Date();
           currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
@@ -205,12 +328,32 @@ export async function POST(req: Request) {
       }
     }
 
+    console.log('✅ Webhook processed successfully');
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('❌ Webhook error:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    
+    // Return detailed error information for debugging
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
+      { 
+        error: 'Webhook handler failed',
+        details: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Stripe webhook endpoint is active',
+    timestamp: new Date().toISOString(),
+    url: 'https://www.gigi.w230.net/api/webhooks/stripe',
+    status: 'ready',
+    webhookSecretConfigured: !!webhookSecret,
+    environment: process.env.NODE_ENV
+  });
 } 

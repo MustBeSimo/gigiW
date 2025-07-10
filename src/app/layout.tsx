@@ -7,6 +7,7 @@ import { metadata } from './metadata';
 // Dynamically load client-only components
 const ClientLayout = dynamic(() => import('@/components/ClientLayout'), { ssr: false });
 const SimpleBackground = dynamic(() => import('@/components/SimpleBackground'), { ssr: false });
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), { ssr: false });
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -57,9 +58,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-inter min-h-screen antialiased overflow-x-hidden bg-white dark:bg-gray-900 text-neutral-800 dark:text-neutral-200 transition-colors duration-300`}>
         <SimpleBackground />
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <ErrorBoundary
+          fallbackTitle="Application Error"
+          fallbackDescription="We're experiencing technical difficulties. Please try refreshing the page."
+          showReload={true}
+        >
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </ErrorBoundary>
       </body>
     </html>
   );

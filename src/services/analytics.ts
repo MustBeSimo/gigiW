@@ -1,22 +1,24 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
 
-type AnalyticsEvent = {
-  event_type: 'widget_load' | 'widget_error' | 'voice_chat_start' | 'voice_chat_end' | 'mic_permission_denied';
-  user_id: string;
-  metadata?: Record<string, any>;
-  timestamp?: string;
-};
+export enum AnalyticsEventType {
+  MOOD_CHECKIN = 'mood_checkin',
+  VOICE_CHAT_START = 'voice_chat_start',
+  VOICE_CHAT_END = 'voice_chat_end',
+  CHAT_MESSAGE = 'chat_message',
+  REPORT_DOWNLOAD = 'report_download',
+  SUBSCRIPTION_PURCHASE = 'subscription_purchase',
+  CREDITS_PURCHASE = 'credits_purchase',
+}
 
 class AnalyticsService {
-  private supabase = createClientComponentClient();
-
-  async trackEvent(event: AnalyticsEvent) {
+  async trackEvent(eventType: AnalyticsEventType, metadata?: Record<string, any>) {
     try {
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('analytics_events')
         .insert({
-          ...event,
-          timestamp: event.timestamp || new Date().toISOString()
+          event_type: eventType,
+          metadata: metadata,
+          timestamp: new Date().toISOString()
         });
 
       if (error) {
@@ -28,48 +30,32 @@ class AnalyticsService {
   }
 
   async trackWidgetLoad(userId: string, success: boolean, error?: string) {
-    await this.trackEvent({
-      event_type: 'widget_load',
-      user_id: userId,
-      metadata: { success, error }
-    });
+    await this.trackEvent(AnalyticsEventType.MOOD_CHECKIN, { success, error });
   }
 
   async trackWidgetError(userId: string, error: Error) {
-    await this.trackEvent({
-      event_type: 'widget_error',
-      user_id: userId,
-      metadata: {
-        error_message: error.message,
-        error_stack: error.stack
-      }
+    await this.trackEvent(AnalyticsEventType.MOOD_CHECKIN, {
+      error_message: error.message,
+      error_stack: error.stack
     });
   }
 
   async trackVoiceChatSession(userId: string, startTime: Date, endTime?: Date) {
     if (!endTime) {
-      await this.trackEvent({
-        event_type: 'voice_chat_start',
-        user_id: userId,
+      await this.trackEvent(AnalyticsEventType.VOICE_CHAT_START, {
         timestamp: startTime.toISOString()
       });
-    } else {
-      await this.trackEvent({
-        event_type: 'voice_chat_end',
-        user_id: userId,
-        metadata: {
+          } else {
+        await this.trackEvent(AnalyticsEventType.VOICE_CHAT_END, {
           duration_seconds: Math.round((endTime.getTime() - startTime.getTime()) / 1000)
-        },
-        timestamp: endTime.toISOString()
-      });
-    }
+        });
+      }
   }
 
   async trackMicrophonePermission(userId: string, granted: boolean) {
     if (!granted) {
-      await this.trackEvent({
-        event_type: 'mic_permission_denied',
-        user_id: userId
+      await this.trackEvent(AnalyticsEventType.MOOD_CHECKIN, {
+        mic_permission_denied: true
       });
     }
   }

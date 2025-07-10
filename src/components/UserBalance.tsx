@@ -1,20 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/utils/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import LoadingSpinner, { SkeletonCard } from '@/components/LoadingSpinner';
 
 export default function UserBalance() {
   const [balance, setBalance] = useState<number | null>(null);
   const [moodCheckins, setMoodCheckins] = useState<number | null>(null);
   const [voiceTimeRemaining, setVoiceTimeRemaining] = useState<number | null>(null);
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
-  const supabase = createClientComponentClient();
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchBalance = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!user) return;
 
+    setIsLoading(true);
     try {
       const response = await fetch('/api/balance');
       if (response.ok) {
@@ -30,18 +33,26 @@ export default function UserBalance() {
     const { data, error } = await supabase
       .from('user_balances')
       .select('voice_time_remaining')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (!error && data) {
       setVoiceTimeRemaining(data.voice_time_remaining);
     }
+    
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchBalance();
+    if (user) {
+      fetchBalance();
+    } else {
+      setIsLoading(false);
+    }
 
-    // Subscribe to balance changes
+    // Subscribe to balance changes only if user exists
+    if (!user) return;
+
     const channel = supabase
       .channel('balance_updates')
       .on(
@@ -50,6 +61,7 @@ export default function UserBalance() {
           event: 'UPDATE',
           schema: 'public',
           table: 'user_balances',
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           setBalance(payload.new.balance);
@@ -62,9 +74,30 @@ export default function UserBalance() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
-  if (balance === null) return null;
+  if (isLoading) {
+    return (
+      <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 shadow-lg">
+        <div className="flex flex-col gap-4">
+          <div className="animate-pulse">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-4 w-24 mb-2"></div>
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-8 w-16"></div>
+          </div>
+          <div className="animate-pulse">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-4 w-24 mb-2"></div>
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-8 w-16"></div>
+          </div>
+          <div className="animate-pulse">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-4 w-24 mb-2"></div>
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-8 w-16"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || balance === null) return null;
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 shadow-lg">
