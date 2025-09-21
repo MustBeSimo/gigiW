@@ -1,25 +1,21 @@
-import { Inter, Manrope } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import Script from 'next/script';
 import dynamic from 'next/dynamic';
 import { metadata } from './metadata';
 import StructuredData from '@/components/StructuredData';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Dynamically load client-only components
 const ClientLayout = dynamic(() => import('@/components/ClientLayout'), { ssr: false });
 const SimpleBackground = dynamic(() => import('@/components/SimpleBackground'), { ssr: false });
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), { ssr: false });
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-inter'
-});
-
-const manrope = Manrope({ 
-  subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-manrope'
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-inter',
+  display: 'swap'
 });
 
 export { metadata };
@@ -75,17 +71,19 @@ export default function RootLayout({
         </Script>
         <StructuredData />
       </head>
-      <body className={`${inter.variable} ${manrope.variable} font-inter min-h-screen antialiased overflow-x-hidden bg-white dark:bg-gray-900 text-neutral-800 dark:text-neutral-200 transition-colors duration-300`}>
+      <body className={`${inter.variable} font-inter min-h-screen antialiased overflow-x-hidden text-neutral-800 dark:text-neutral-200 transition-colors duration-300`}>
         <SimpleBackground />
-        <ErrorBoundary
-          fallbackTitle="Application Error"
-          fallbackDescription="We're experiencing technical difficulties. Please try refreshing the page."
-          showReload={true}
-        >
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-        </ErrorBoundary>
+        <ThemeProvider defaultAvatar="lumo" defaultDarkMode={false}>
+          <ErrorBoundary
+            fallbackTitle="Application Error"
+            fallbackDescription="We're experiencing technical difficulties. Please try refreshing the page."
+            showReload={true}
+          >
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </ErrorBoundary>
+        </ThemeProvider>
         {/* Register service worker (next-pwa outputs sw.js in /public) */}
         <Script id="register-sw" strategy="afterInteractive">
           {`

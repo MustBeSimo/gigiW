@@ -4,9 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme, useThemeInfo } from '@/contexts/ThemeContext';
 import Image from 'next/image';
 import MindGleamLogoAnimated from '@/components/MindGleamLogoAnimated';
-import { mindgleamGradients, getAvatarColors } from '@/utils/colors';
 import InlineChat from '@/components/InlineChat';
 
 // Typewriter component for rotating taglines
@@ -103,15 +103,19 @@ const avatars = [
 
 interface HeroProps {
   onStartDemo: (goal?: string) => void;
-  selectedAvatar: string;
-  onAvatarChange: (avatar: 'gigi' | 'vee' | 'lumo') => void;
 }
 
-export default function Hero({ onStartDemo, selectedAvatar, onAvatarChange }: HeroProps) {
+export default function Hero({ onStartDemo }: HeroProps) {
   const { user, signInWithGoogle } = useAuth();
+  const { selectedAvatar, setSelectedAvatar, themeClasses } = useTheme();
+  const { avatar, themeName } = useThemeInfo();
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const avatarSectionRef = useRef<HTMLDivElement | null>(null);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [selectedEnergy, setSelectedEnergy] = useState<string | null>(null);
+  const [showPoints, setShowPoints] = useState<boolean>(false);
 
   const currentAvatar = avatars.find(avatar => avatar.id === selectedAvatar) || avatars[0];
 
@@ -154,7 +158,7 @@ export default function Hero({ onStartDemo, selectedAvatar, onAvatarChange }: He
   return (
     <div className="relative">
       {/* Main Hero Section */}
-      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${mindgleamGradients.hero} dark:from-mindgleam-mint-900/20 dark:via-mindgleam-peach-900/20 dark:to-mindgleam-lavender-900/20`}>
+      <div className={`relative overflow-hidden rounded-2xl ${themeClasses.container}`}>
         {/* Subtle decorative elements */}
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/5 dark:to-black/10"></div>
         <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-orange-100/30 via-transparent to-transparent dark:from-orange-900/10"></div>
@@ -162,167 +166,216 @@ export default function Hero({ onStartDemo, selectedAvatar, onAvatarChange }: He
         {/* Content - Rearranged layout */}
         <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
           <div className="max-w-3xl mx-auto text-center">
-            
-            {/* Main Headline - Moved to top */}
+            {/* Headline */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="mb-6"
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="mb-4"
             >
-              {/* Animated Taglines as Main Title */}
-              <div className="mb-4">
-                <TypewriterTaglines />
-              </div>
-              
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
-                CBT-inspired coaching tools that help you feel lighter, faster
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none ${themeClasses.heading}`}>
+                Turn today around
+              </h1>
+              <p className={`mt-3 text-lg sm:text-xl font-medium tracking-wide leading-relaxed ${themeClasses.subheading}`}>
+                Tap your vibe. Get a boost. Go.
               </p>
             </motion.div>
 
-            {/* Brand logo - repositioned after headline with shine animation */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="flex justify-center mb-6"
-            >
-              <div className={`relative p-4 rounded-full backdrop-blur-sm overflow-hidden bg-gradient-to-br from-${currentAvatar.id === 'gigi' ? 'pink' : currentAvatar.id === 'vee' ? 'blue' : 'teal'}-50/20 to-${currentAvatar.id === 'gigi' ? 'purple' : currentAvatar.id === 'vee' ? 'cyan' : 'emerald'}-50/20 dark:from-${currentAvatar.id === 'gigi' ? 'pink' : currentAvatar.id === 'vee' ? 'blue' : 'teal'}-900/20 dark:to-${currentAvatar.id === 'gigi' ? 'purple' : currentAvatar.id === 'vee' ? 'cyan' : 'emerald'}-900/20`}>
-                {/* Animated background glow effect */}
-                <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-${currentAvatar.id === 'gigi' ? 'pink' : currentAvatar.id === 'vee' ? 'blue' : 'teal'}-200/20 to-transparent animate-pulse`}></div>
-                <div className="relative z-10">
-                  <MindGleamLogoAnimated width={138} height={215} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Inline Chat - Replaced Flow in button */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="mb-6"
-            >
-              {!user ? (
-                <InlineChat 
-                  selectedAvatar={selectedAvatar} 
-                  onUpgrade={onStartDemo}
+            {/* Progress */}
+            <div className="max-w-md mx-auto mb-6">
+              <div className="w-full h-2 bg-gray-200/60 dark:bg-gray-700/60 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${themeClasses.btnPrimary} transition-all duration-300`}
+                  style={{ width: `${(currentStep - 1) * 33.33}%` }}
                 />
-              ) : (
-                <div className="bg-white/60 dark:bg-gray-800/60 rounded-xl p-4 shadow-md text-center">
-                  <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                    Welcome back! 👋
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Ready to continue with {currentAvatar.name}?
-                  </p>
-                </div>
+              </div>
+              <p className={`mt-2 text-xs ${themeClasses.caption}`}>Step {Math.min(currentStep, 3)} of 3</p>
+            </div>
+
+            {/* Steps */}
+            <div className="mb-6">
+              {currentStep === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className={`text-xl font-bold tracking-tight ${themeClasses.heading} mb-4`}>What's your vibe right now?</p>
+                  <div className="flex justify-center gap-3 flex-wrap">
+                    {[
+                      { id: 'chill', label: 'Chill', emoji: '😌' },
+                      { id: 'meh', label: 'Meh', emoji: '😐' },
+                      { id: 'stressed', label: 'Stressed', emoji: '😵' },
+                    ].map((m) => (
+                      <motion.button
+                        key={m.id}
+                        onClick={() => { setSelectedMood(m.id); setCurrentStep(2); }}
+                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-md transition-all duration-200`}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <span className="text-2xl mr-2">{m.emoji}</span>
+                        <span className={`font-semibold tracking-wide ${themeClasses.heading}`}>{m.label}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
               )}
-            </motion.div>
 
-            {/* Compact Avatar Selection - hidden large avatar for more compact UI */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="mb-6"
-            >
-              {/* Meet section without large avatar */}
-              <motion.div
-                key={selectedAvatar}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.05 }}
-                className="text-center mb-4"
-              >
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                  Meet {currentAvatar.name}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {currentAvatar.description}
-                </p>
-              </motion.div>
+              {currentStep === 2 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className={`text-xl font-bold tracking-tight ${themeClasses.heading} mb-4`}>Pick your boost</p>
+                  <div className="flex justify-center gap-3 flex-wrap">
+                    {[
+                      { id: 'calm', label: 'Calm' },
+                      { id: 'focus', label: 'Focus' },
+                      { id: 'confidence', label: 'Confidence' },
+                    ].map((e) => (
+                      <motion.button
+                        key={e.id}
+                        onClick={() => {
+                          setSelectedEnergy(e.id);
+                          if (!user) {
+                            // Gate after step 2
+                            signInWithGoogle();
+                          }
+                          setCurrentStep(3);
+                        }}
+                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-md transition-all duration-200`}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <span className={`font-semibold tracking-wide ${themeClasses.heading}`}>{e.label}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                  {!user && (
+                    <p className={`mt-3 text-xs ${themeClasses.caption}`}>Sign in to save your plan and continue.</p>
+                  )}
+                </motion.div>
+              )}
 
-              {/* Compact Avatar Selection */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-                className="mb-6 px-4"
-                ref={avatarSectionRef}
-              >
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium text-center">
-                  Choose your AI companion:
-                </p>
-                <div className="flex justify-center gap-2 sm:gap-3 flex-wrap max-w-sm mx-auto">
-                  {avatars.map((avatar) => (
-                    <motion.button
-                      key={avatar.id}
-                      onClick={() => onAvatarChange(avatar.id)}
-                      className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg transition-all duration-300 min-w-[80px] sm:min-w-[90px] flex-1 max-w-[100px] ${
-                        selectedAvatar === avatar.id 
-                          ? 'bg-white/70 dark:bg-gray-800/70 shadow-md scale-105 ring-2 ring-blue-300' 
-                          : 'bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-800/60 hover:scale-102'
-                      }`}
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br ${avatar.gradient} p-0.5 ${
-                        selectedAvatar === avatar.id ? 'ring-2 ring-white/50' : ''
-                      }`}>
-                        <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
-                          {imagesLoaded && (
-                            <Image
-                              src={avatar.src}
-                              alt={avatar.name}
-                              width={40}
-                              height={40}
-                              className="object-contain avatar-image"
-                              sizes="40px"
-                            />
-                          )}
+              {currentStep === 3 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className={`text-xl font-bold tracking-tight ${themeClasses.heading} mb-3`}>Choose your guide</p>
+                  <div className="flex justify-center gap-2 sm:gap-3 flex-wrap max-w-sm mx-auto" ref={avatarSectionRef}>
+                    {avatars.map((a) => (
+                      <motion.button
+                        key={a.id}
+                        onClick={() => {
+                          setSelectedAvatar(a.id);
+                          setShowPoints(true);
+                          setCurrentStep(4);
+                        }}
+                        className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg transition-all duration-300 min-w-[80px] sm:min-w-[90px] flex-1 max-w-[100px] ${
+                          selectedAvatar === a.id
+                            ? `${themeClasses.card} shadow-md scale-105 ring-2 ring-opacity-50 ${themeClasses.glow}`
+                            : `${themeClasses.card} opacity-70 hover:opacity-100 hover:scale-102`
+                        }`}
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br ${a.gradient} p-0.5`}>
+                          <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
+                            {imagesLoaded && (
+                              <Image src={a.src} alt={a.name} width={40} height={40} className="object-contain avatar-image" sizes="40px" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-center">
-                        <p className={`text-xs font-semibold ${
-                          selectedAvatar === avatar.id 
-                            ? 'text-gray-900 dark:text-white' 
-                            : 'text-gray-700 dark:text-gray-300'
-                        }`}>
-                          {avatar.name}
-                        </p>
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
+                        <div className="text-center">
+                          <p className={`text-xs font-bold tracking-wide uppercase ${themeClasses.heading}`}>{a.name}</p>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
+              {currentStep === 4 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className={`${themeClasses.card} rounded-xl p-6 shadow-lg`}>
+                    <p className={`text-2xl font-black tracking-tight leading-tight ${themeClasses.heading} mb-2`}>Your mini‑plan is ready 🎉</p>
+                    <p className={`text-sm font-medium tracking-wide ${themeClasses.subheading} mb-4`}>Mood: {selectedMood} • Boost: {selectedEnergy} • Guide: {currentAvatar.name}</p>
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        onClick={() => {
+                          try {
+                            if (selectedEnergy) localStorage.setItem('selectedGoal', selectedEnergy);
+                            if (selectedMood) localStorage.setItem('selectedMood', selectedMood);
+                            if (selectedAvatar) localStorage.setItem('selectedGuide', selectedAvatar);
+                          } catch (e) {}
+                          onStartDemo(selectedEnergy || undefined);
+                        }}
+                        className={`px-5 py-3 rounded-lg text-white ${themeClasses.btnPrimary} font-bold tracking-wide transition-all`}
+                      >
+                        Start now
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentStep(1);
+                          setSelectedMood(null);
+                          setSelectedEnergy(null);
+                          setShowPoints(false);
+                        }}
+                        className={`px-4 py-3 rounded-lg ${themeClasses.btnSecondary} font-medium tracking-wide transition-all`}
+                      >
+                        Restart
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
 
-            {/* Trust Indicators - Compact */}
+            {/* Points chip */}
+            <AnimatePresence>
+              {showPoints && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${themeClasses.btnSecondary} text-sm font-medium`}
+                >
+                  <span>+5 feel‑good points</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Social proof */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs text-gray-600 dark:text-gray-400"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className={`mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs ${themeClasses.caption}`}
             >
               <div className="flex items-center gap-1">
                 <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>No credit card required</span>
+                <span>100% private</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>CBT-inspired coaching</span>
+                <span>CBT‑inspired</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>100% private & secure</span>
+                <span>Loved by busy humans</span>
               </div>
             </motion.div>
           </div>
