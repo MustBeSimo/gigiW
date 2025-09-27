@@ -239,32 +239,9 @@ export default function HomeClient() {
         <SimplifiedHero onUpgrade={handleBuyPlus} />
       )}
 
-      {/* Signed-in extras below hero */}
+      {/* Signed-in extras below hero - Service Cards only */}
       {!loading && user && (
         <>
-          {/* Advanced Chat Section */}
-          <section className="flex-1 px-4 mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg max-w-4xl mx-auto"></div>}>
-                <ChatCard
-                  user={user}
-                  balance={balance}
-                  selectedAvatar={{
-                    id: selectedAvatar,
-                    name: currentAvatarInfo.name,
-                    src: currentAvatarInfo.src,
-                    description: currentAvatarInfo.description,
-                    gradient: avatarThemes[selectedAvatar]?.gradient || 'from-pink-200 to-purple-200'
-                  }}
-                />
-              </Suspense>
-            </motion.div>
-          </section>
-
           {/* Service Cards Section */}
           <section className="px-4 mb-16">
             <div className="max-w-6xl mx-auto">

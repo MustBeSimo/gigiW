@@ -11,6 +11,25 @@ interface ServiceCardsProps {
 const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
   const { themeClasses } = useTheme();
 
+  const handleServiceClick = (serviceId: string) => {
+    switch (serviceId) {
+      case 'mindair':
+        // TODO: Navigate to breathing exercises
+        alert('🌬️ MindAir breathing exercises coming soon!');
+        break;
+      case 'mindguide':
+        // TODO: Navigate to personalized guidance
+        alert('🧭 MindGuide personalized guidance coming soon!');
+        break;
+      case 'vibecheck':
+        // TODO: Navigate to mood tracking
+        alert('💫 VibeCheck mood tracking coming soon!');
+        break;
+      default:
+        break;
+    }
+  };
+
   const services = [
     {
       id: 'mindair',
@@ -19,7 +38,7 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
       description: 'Breathing exercises and mindfulness techniques',
       gradient: 'from-blue-400 to-cyan-400',
       action: 'Start Breathing',
-      comingSoon: true
+      comingSoon: false
     },
     {
       id: 'mindguide',
@@ -28,7 +47,7 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
       description: 'Personalized wellness guidance and insights',
       gradient: 'from-purple-400 to-pink-400',
       action: 'Get Guidance',
-      comingSoon: true
+      comingSoon: false
     },
     {
       id: 'vibecheck',
@@ -37,7 +56,7 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
       description: 'Mood tracking and emotional awareness',
       gradient: 'from-emerald-400 to-teal-400',
       action: 'Check Vibe',
-      comingSoon: true
+      comingSoon: false
     }
   ];
 
@@ -80,6 +99,7 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
             {/* Action Button */}
             <button
               disabled={service.comingSoon}
+              onClick={() => handleServiceClick(service.id)}
               className={`
                 w-full py-3 px-4 rounded-xl font-medium transition-all duration-200
                 ${service.comingSoon
