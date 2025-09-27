@@ -6,11 +6,12 @@ interface MindGleamLogoAnimatedProps {
   className?: string;
   width?: number | string;
   height?: number | string;
+  mode?: 'color' | 'mono';
 }
 
-export default function MindGleamLogoAnimated({ className = '', width = 138, height = 215 }: MindGleamLogoAnimatedProps) {
+export default function MindGleamLogoAnimated({ className = '', width, height, mode = 'color' }: MindGleamLogoAnimatedProps) {
   return (
-    <div className={`inline-block ${className}`} style={{ width, height }}>
+    <div className={`inline-block ${className}`} style={{ ...(width !== undefined ? { width } : {}), ...(height !== undefined ? { height } : {} ) }}>
       {/* Complete SVG with all paths and infill animations */}
       <svg viewBox="0 0 286.03 446.3" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mind Gleam Logo" className="w-full h-full">
         <defs>
@@ -36,28 +37,28 @@ export default function MindGleamLogoAnimated({ className = '', width = 138, hei
               60% { fill: #fbbf24; filter: brightness(1.1) drop-shadow(0 0 6px #fbbf24); }
               100% { fill: #fdb829; filter: brightness(1) drop-shadow(0 0 0px #fdb829); }
             }
-            .cls-1 { fill: #fdb829; animation: mg-infill-star 3s ease-in-out infinite; }
-            .cls-2 { 
-              fill: #30b1af; 
-              stroke: #30b1af; 
-              stroke-linejoin: round; 
-              stroke-width: 9px; 
-              animation: mg-infill-teal 4s ease-in-out infinite; 
+            .cls-1 { fill: ${mode === 'mono' ? 'currentColor' : '#fdb829'}; ${mode === 'mono' ? 'animation: none !important;' : 'animation: mg-infill-star 3s ease-in-out infinite;'} }
+            .cls-2 {
+              fill: ${mode === 'mono' ? 'currentColor' : '#30b1af'};
+              stroke: ${mode === 'mono' ? 'currentColor' : '#30b1af'};
+              stroke-linejoin: round;
+              stroke-width: 9px;
+              ${mode === 'mono' ? 'animation: none !important;' : 'animation: mg-infill-teal 4s ease-in-out infinite;'}
             }
             .cls-2, .cls-3 { stroke-linecap: round; }
-            .cls-3 { 
-              stroke-width: 15px; 
-              fill: none; 
-              stroke: #0087aa; 
-              stroke-miterlimit: 10; 
-              animation: mg-infill-blue 5s ease-in-out infinite; 
+            .cls-3 {
+              stroke-width: 15px;
+              fill: none;
+              stroke: ${mode === 'mono' ? 'currentColor' : '#0087aa'};
+              stroke-miterlimit: 10;
+              ${mode === 'mono' ? 'animation: none !important;' : 'animation: mg-infill-blue 5s ease-in-out infinite;'}
             }
-            .cls-4 { 
-              stroke-width: 23px; 
-              fill: none; 
-              stroke: #0087aa; 
-              stroke-miterlimit: 10; 
-              animation: mg-infill-blue 4s ease-in-out infinite; 
+            .cls-4 {
+              stroke-width: 23px;
+              fill: none;
+              stroke: ${mode === 'mono' ? 'currentColor' : '#0087aa'};
+              stroke-miterlimit: 10;
+              ${mode === 'mono' ? 'animation: none !important;' : 'animation: mg-infill-blue 4s ease-in-out infinite;'}
             }
           `}</style>
         </defs>
