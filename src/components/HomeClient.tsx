@@ -1,23 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import SimpleCard from '@/components/SimpleCard';
-import SocialLinks from '@/components/SocialLinks';
-import ContactCard from '@/components/ContactCard';
-import TypewriterText from '@/components/TypewriterText';
-import FAQCard from '@/components/FAQCard';
-import DynamicHero from '@/components/DynamicHero';
-import DemoChat from '@/components/DemoChat';
+import SimplifiedHero from '@/components/SimplifiedHero';
 import Footer from '@/components/Footer';
 import ProfileSettings from '@/components/ProfileSettings';
 import ThemeToggle from '@/components/ThemeToggle';
-const GuideCard = React.lazy(() => import('@/components/GuideCard'));
 const ChatCard = React.lazy(() => import('@/components/ChatCard'));
-const WeatherHoroscopeCard = React.lazy(() => import('@/components/WeatherHoroscopeCard'));
-const MoodCheckinCard = React.lazy(() => import('@/components/MoodCheckinCard'));
-const UpsellBanner = React.lazy(() => import('@/components/UpsellBanner'));
-import { fetchSocialLinks } from '@/utils/clientSocialLinks';
-import { SocialLink } from '@/utils/socialLinks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, useThemeInfo } from '@/contexts/ThemeContext';
 import { loadStripe } from '@stripe/stripe-js';
@@ -26,61 +14,40 @@ import { supabase } from '@/utils/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Profile } from '@/types/database';
 import { motion } from 'framer-motion';
-import BreathingMiniApp from '@/components/BreathingMiniApp';
 import { GeneralDisclaimer, CrisisBanner } from '@/components/ComplianceDisclaimer';
-import TrustBadges from '@/components/TrustBadges';
-import ExitIntentPopup from '@/components/ExitIntentPopup';
-import ReferralProgram from '@/components/ReferralProgram';
-import FeatureCard from '@/components/FeatureCard';
 import MindGleamLogoAnimated from '@/components/MindGleamLogoAnimated';
+import ServiceCards from '@/components/ServiceCards';
+import { avatarThemes } from '@/utils/avatarThemes';
 
 export default function HomeClient() {
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [buyingPlus, setBuyingPlus] = useState(false);
-  const [buyingPro, setBuyingPro] = useState(false);
-  const [isChatVisible, setIsChatVisible] = useState(false);
-  const [isDemoChatOpen, setIsDemoChatOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { user, loading, signInWithGoogle, signOut } = useAuth();
-  const { selectedAvatar, setSelectedAvatar, themeClasses } = useTheme();
+  const { selectedAvatar, setSelectedAvatar, themeClasses, isDarkMode } = useTheme();
   const { avatar, themeName } = useThemeInfo();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showMoodCheckin, setShowMoodCheckin] = useState(false);
 
-  // Avatar configuration
-  const avatars = [
-    {
-      id: 'gigi' as const,
-      name: 'Gigi',
-      description: 'Your holistic AI wellness companion',
-      src: '/images/avatars/Gigi_avatar.png',
-      gradient: 'from-pink-200 to-purple-200'
-    },
-    {
-      id: 'vee' as const,
-      name: 'Vee',
-      description: 'Your evidence-based AI wellness coach',
-      src: '/images/avatars/Vee_avatar.png',
-      gradient: 'from-blue-200 to-cyan-200'
-    },
-    {
-      id: 'lumo' as const,
-      name: 'Lumo',
-      description: 'Your AI creative movement & wellness guide',
-      src: '/images/avatars/Lumo_avatar.png',
-      gradient: 'from-teal-200 to-emerald-200'
-    }
-  ];
+  // Get avatar info from avatarThemes - single source of truth
+  const getAvatarInfo = (avatarId: 'gigi' | 'vee' | 'lumo') => {
+    const theme = avatarThemes[avatarId];
+    return {
+      id: avatarId,
+      name: theme.name,
+      description: theme.description,
+      src: `/images/avatars/${theme.name}_avatar.png`,
+      gradient: theme.gradient,
+      bgGradient: isDarkMode ? theme.animatedBackground.dark : theme.animatedBackground.light,
+      bgGradientDark: theme.animatedBackground.dark,
+    };
+  };
 
-  const currentAvatar = avatars.find(avatar => avatar.id === selectedAvatar) || avatars[0];
+  const currentAvatarInfo = getAvatarInfo(selectedAvatar);
 
   useEffect(() => {
     setIsClient(true);
@@ -100,7 +67,7 @@ export default function HomeClient() {
     // Handle successful purchase
     const success = searchParams.get('success');
     if (success === 'true') {
-      setSuccessMessage('🎉 Payment successful! Your messages and mood check-ins have been added to your account.');
+      setSuccessMessage('🎉 Payment successful! Your chat messages have been added to your account.');
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('success');
       window.history.replaceState({}, '', newUrl.toString());
@@ -129,18 +96,6 @@ export default function HomeClient() {
       window.history.replaceState({}, '', newUrl.toString());
     }
 
-    // Set chat visible when user is signed in
-    if (user) {
-      setIsChatVisible(true);
-    }
-
-    // Check if mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, [searchParams, user, isClient]);
 
   // Function to fetch user balance
@@ -152,7 +107,9 @@ export default function HomeClient() {
       const data = await response.json();
       setBalance(data.balance);
     } catch (error) {
-      console.error('Error fetching balance:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching balance:', error);
+      }
     } finally {
       setBalanceLoading(false);
     }
@@ -171,15 +128,6 @@ export default function HomeClient() {
     }
   }, [user]);
 
-  useEffect(() => {
-    // Fetch social links
-    const loadSocialLinks = async () => {
-      const links = await fetchSocialLinks();
-      setSocialLinks(links);
-    };
-    loadSocialLinks();
-  }, []);
-
   const handleBuyPlus = async () => {
     if (!user) {
       alert('Please sign in first to purchase the Plus plan. Click the "Sign In" button at the top right.');
@@ -197,132 +145,29 @@ export default function HomeClient() {
       if (!stripe) throw new Error('Stripe failed to load');
       const { error } = await stripe.redirectToCheckout({ sessionId });
       if (error) {
-        console.error('Stripe redirect error:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Stripe redirect error:', error);
+        }
         alert('Something went wrong with the payment. Please try again.');
       }
     } catch (error) {
-      console.error('Error during checkout:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error during checkout:', error);
+      }
       alert('Something went wrong. Please try again.');
     } finally {
       setBuyingPlus(false);
     }
   };
 
-  const handleBuyPro = async () => {
-    alert('Pro plan is coming soon! Please try the Plus plan for now.');
-  };
 
-  const handleStartDemo = (goal?: string) => {
-    // For logged-in users, show the full chat
-    if (user) {
-      setIsChatVisible(true);
-    } else {
-      // For anonymous users, they can use the inline chat directly
-      // This function now mainly handles upgrade flow from inline chat
-      signInWithGoogle();
-    }
-    if (goal) {
-      localStorage.setItem('selectedGoal', goal);
-    }
-  };
 
-  const getAvatarColorScheme = (avatarId: string) => {
-    switch (avatarId) {
-      case 'gigi':
-        return {
-          gradient: 'from-pink-400 to-purple-400',
-          primaryColor: 'pink',
-          accentColor: 'purple',
-          bgPrimary: 'bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40',
-          borderColor: 'border-pink-400 dark:border-pink-500',
-          textColor: 'text-pink-800 dark:text-pink-200',
-          buttonColor: 'from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
-        };
-      case 'vee':
-        return {
-          gradient: 'from-blue-400 to-cyan-400',
-          primaryColor: 'blue',
-          accentColor: 'cyan',
-          bgPrimary: 'bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40',
-          borderColor: 'border-blue-400 dark:border-blue-500',
-          textColor: 'text-blue-800 dark:text-blue-200',
-          buttonColor: 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
-        };
-      case 'lumo':
-        return {
-          gradient: 'from-teal-400 to-emerald-400',
-          primaryColor: 'teal',
-          accentColor: 'emerald',
-          bgPrimary: 'bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-900/40 dark:to-emerald-900/40',
-          borderColor: 'border-teal-400 dark:border-teal-500',
-          textColor: 'text-teal-800 dark:text-teal-200',
-          buttonColor: 'from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600'
-        };
-      default:
-        return {
-          gradient: 'from-pink-400 to-purple-400',
-          primaryColor: 'pink',
-          accentColor: 'purple',
-          bgPrimary: 'bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40',
-          borderColor: 'border-pink-400 dark:border-pink-500',
-          textColor: 'text-pink-800 dark:text-pink-200',
-          buttonColor: 'from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
-        };
-    }
-  };
-
-  const colorScheme = getAvatarColorScheme(selectedAvatar);
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    if (success === 'true') {
-      setShowSuccess(true);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    }
-  }, []);
 
   return (
     <main className={themeClasses.main}>
-      {/* Sidebar for Weather/Horoscope - Mobile Optimized */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 max-w-sm ${themeClasses.card} shadow-xl transform transition-transform duration-300 z-40 ${
-        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
-        <div className="p-4 sm:p-6 h-full overflow-y-auto">
-          <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-gray-800 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Weather & Horoscope</h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-              aria-label="Close sidebar"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="pb-4">
-            <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
-              <WeatherHoroscopeCard />
-            </Suspense>
-          </div>
-        </div>
-      </div>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Header Navigation */}
-      <header className="relative z-20 w-full">
-        <div className="container mx-auto px-4 pb-4 max-w-7xl">
+      {/* Header Navigation - Floating on top of hero */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border-b border-white/20 dark:border-gray-700/20">
+        <div className="container mx-auto px-4 py-3 max-w-7xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 text-gray-900 dark:text-white">
@@ -332,28 +177,18 @@ export default function HomeClient() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2.5 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200"
-                title="Weather & Horoscope"
-                aria-label="Open weather and horoscope"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.002 4.002 0 003 15z" />
-                </svg>
-              </button>
               {loading ? (
                 <div className="w-20 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
               ) : user ? (
                 <div className="flex items-center gap-2">
                   {balance !== null && (
-                    <div className="px-3 py-1.5 bg-white/70 dark:bg-gray-800/70 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="px-3 py-1.5 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-white/30 dark:border-gray-600/30">
                       {balance} credits
                     </div>
                   )}
                   <button
                     onClick={() => setShowProfileSettings(true)}
-                    className="p-2.5 bg-white/70 dark:bg-gray-800/70 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200"
+                    className="p-2.5 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-gray-800/30 transition-all duration-200 border border-white/30 dark:border-gray-600/30"
                     title="Profile Settings"
                     aria-label="Open profile settings"
                   >
@@ -375,92 +210,145 @@ export default function HomeClient() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="relative z-10">
-        <div className="container mx-auto px-4 pb-8 max-w-7xl">
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-600 rounded-lg">
-              <p className="text-green-800 dark:text-green-200">{successMessage}</p>
-            </div>
-          )}
-
-          {/* Unified Hero with Integrated Chat */}
-          <section className="mb-12 lg:mb-16">
-            <DynamicHero onUpgrade={handleBuyPlus} />
-          </section>
-
-          {/* Trust Badges */}
-          <TrustBadges />
-
-          {/* Compliance Disclaimer */}
-          <section className="mb-8">
-            <GeneralDisclaimer compact className="max-w-4xl mx-auto" />
-          </section>
-
-          {/* Feature Cards now integrated into DynamicHero floating system */}
-
-          {/* Upsells */}
-          <UpsellBanner trigger="low-balance" balance={balance || 0} onUpgrade={() => handleBuyPlus()} />
-          {!user && (
-            <UpsellBanner trigger="feature-locked" onUpgrade={() => signInWithGoogle()} />
-          )}
-
-          {/* Chat Section */}
-          {isChatVisible && (
-            <section className="mb-12 lg:mb-16">
-              <div className={`${themeClasses.card} rounded-2xl p-8 shadow-lg`}>
-                <div className="flex items-center justify-center gap-3 mb-8">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarColorScheme(selectedAvatar).gradient} p-1`}>
-                    <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
-                      <Image src={currentAvatar.src} alt={currentAvatar.name} width={48} height={48} className="object-contain avatar-image" sizes="48px" />
-                    </div>
-                  </div>
-                  <h2 className={`text-2xl font-bold ${themeClasses.heading}`}>Chat with {currentAvatar.name}</h2>
-                </div>
-                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>}>
-                  <ChatCard user={user || undefined} balance={balance} selectedAvatar={currentAvatar} />
-                </Suspense>
-              </div>
-            </section>
-          )}
-
-          {/* Mood Check-in expandable section removed in favor of compact VibeCheck card above */}
-
-          {/* Guides full-width section removed; included in MindGuide card */}
-
-          {/* Pricing section now integrated into DynamicHero floating plan card */}
-
-          {/* Referral Program - Only show for signed-in users */}
-          {user && (
-            <section className="mb-12 lg:mb-16">
-              <div className="max-w-2xl mx-auto">
-                <ReferralProgram />
-              </div>
-            </section>
-          )}
-
-          {/* FAQ */}
-          <section className="mb-12 lg:mb-16">
-            <div className={`${themeClasses.card} rounded-2xl p-8 shadow-lg`}>
-              <h2 className={`text-2xl font-bold text-center ${themeClasses.heading} mb-8`}>Frequently Asked Questions</h2>
-              <div className="max-w-3xl mx-auto space-y-6">
-                <CrisisBanner />
-                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-48 rounded-lg"></div>}>
-                  <FAQCard />
-                </Suspense>
-              </div>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <Footer />
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-20 left-4 right-4 z-40 max-w-md mx-auto">
+          <motion.div
+            className="p-4 bg-green-100 dark:bg-green-900/90 border border-green-300 dark:border-green-600 rounded-lg shadow-lg backdrop-blur-sm"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <p className="text-green-800 dark:text-green-200">{successMessage}</p>
+          </motion.div>
         </div>
+      )}
 
-        {/* Modals */}
-        <DemoChat isOpen={isDemoChatOpen} onClose={() => setIsDemoChatOpen(false)} selectedAvatar={selectedAvatar} />
-        <ProfileSettings isOpen={showProfileSettings} onClose={() => setShowProfileSettings(false)} />
-        <ExitIntentPopup />
-      </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-green-950/20 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main Hero Section - For non-authenticated users */}
+      {!loading && !user && (
+        <SimplifiedHero onUpgrade={handleBuyPlus} />
+      )}
+
+      {/* Authenticated User Section - Matches SimplifiedHero exactly */}
+      {!loading && user && (
+        <div className={`min-h-screen bg-gradient-to-br ${currentAvatarInfo.bgGradient} transition-all duration-1000 relative overflow-hidden`}>
+
+          {/* Subtle background decoration */}
+          <motion.div
+            className={`absolute inset-0 bg-gradient-to-br ${currentAvatarInfo.gradient} opacity-30`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.3 }}
+            transition={{ duration: 1.5 }}
+          />
+
+          {/* Main content container */}
+          <div className="relative z-10 min-h-screen flex flex-col pt-20">
+
+            {/* Header section with title - Matches SimplifiedHero exactly */}
+            <motion.div
+              className="pt-8 pb-6 px-4 text-center"
+              initial={{ opacity: 0, y: -30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
+                <span className="bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  Transform
+                </span>
+                {' '}anxious thoughts into calm confidence
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4 max-w-3xl mx-auto leading-relaxed">
+                Meet your perfect AI companion - ready for{' '}
+                <span className="font-semibold text-purple-600 dark:text-purple-400">fun chats</span>,{' '}
+                <span className="font-semibold text-blue-600 dark:text-blue-400">wise guidance</span>, and{' '}
+                <span className="font-semibold text-pink-600 dark:text-pink-400">genuine friendship</span>
+              </p>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-12">
+                Friends on demand - anytime, anywhere
+              </p>
+            </motion.div>
+
+            {/* Chat Section */}
+            <section className="flex-1 px-4 mb-16">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg max-w-4xl mx-auto"></div>}>
+                  <ChatCard
+                    user={user}
+                    balance={balance}
+                    selectedAvatar={{
+                      id: selectedAvatar,
+                      name: currentAvatarInfo.name,
+                      src: currentAvatarInfo.src,
+                      description: currentAvatarInfo.description,
+                      gradient: avatarThemes[selectedAvatar]?.gradient || 'from-pink-200 to-purple-200'
+                    }}
+                  />
+                </Suspense>
+              </motion.div>
+            </section>
+
+            {/* Service Cards Section - After chat like in SimplifiedHero */}
+            <section className="px-4 mb-16">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                  <motion.h2
+                    className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.7 }}
+                  >
+                    Complete Wellness Experience
+                  </motion.h2>
+                  <motion.p
+                    className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
+                  >
+                    Beyond conversations, explore our full suite of mental wellness tools
+                  </motion.p>
+                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.9 }}
+                >
+                  <ServiceCards />
+                </motion.div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+      )}
+
+
+      {/* Minimal Compliance Footer */}
+      <section className="py-8 bg-gray-100 dark:bg-gray-900">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <GeneralDisclaimer compact className="mx-auto" />
+        </div>
+      </section>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Modals */}
+      <ProfileSettings isOpen={showProfileSettings} onClose={() => setShowProfileSettings(false)} />
     </main>
   );
 }
