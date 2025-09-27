@@ -234,106 +234,68 @@ export default function HomeClient() {
         </div>
       )}
 
-      {/* Main Hero Section - For non-authenticated users */}
-      {!loading && !user && (
+      {/* Hero - same for all users */}
+      {!loading && (
         <SimplifiedHero onUpgrade={handleBuyPlus} />
       )}
 
-      {/* Authenticated User Section - Matches SimplifiedHero exactly */}
+      {/* Signed-in extras below hero */}
       {!loading && user && (
-        <div className={`min-h-screen bg-gradient-to-br ${currentAvatarInfo.bgGradient} transition-all duration-1000 relative overflow-hidden`}>
-
-          {/* Subtle background decoration */}
-          <motion.div
-            className={`absolute inset-0 bg-gradient-to-br ${currentAvatarInfo.gradient} opacity-30`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
-            transition={{ duration: 1.5 }}
-          />
-
-          {/* Main content container */}
-          <div className="relative z-10 min-h-screen flex flex-col pt-20">
-
-            {/* Header section with title - Matches SimplifiedHero exactly */}
+        <>
+          {/* Advanced Chat Section */}
+          <section className="flex-1 px-4 mb-16">
             <motion.div
-              className="pt-8 pb-6 px-4 text-center"
-              initial={{ opacity: 0, y: -30 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
-                <span className="bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-                  Transform
-                </span>
-                {' '}anxious thoughts into calm confidence
-              </h1>
-              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4 max-w-3xl mx-auto leading-relaxed">
-                Meet your perfect AI companion - ready for{' '}
-                <span className="font-semibold text-purple-600 dark:text-purple-400">fun chats</span>,{' '}
-                <span className="font-semibold text-blue-600 dark:text-blue-400">wise guidance</span>, and{' '}
-                <span className="font-semibold text-pink-600 dark:text-pink-400">genuine friendship</span>
-              </p>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-12">
-                Friends on demand - anytime, anywhere
-              </p>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg max-w-4xl mx-auto"></div>}>
+                <ChatCard
+                  user={user}
+                  balance={balance}
+                  selectedAvatar={{
+                    id: selectedAvatar,
+                    name: currentAvatarInfo.name,
+                    src: currentAvatarInfo.src,
+                    description: currentAvatarInfo.description,
+                    gradient: avatarThemes[selectedAvatar]?.gradient || 'from-pink-200 to-purple-200'
+                  }}
+                />
+              </Suspense>
             </motion.div>
+          </section>
 
-            {/* Chat Section */}
-            <section className="flex-1 px-4 mb-16">
+          {/* Service Cards Section */}
+          <section className="px-4 mb-16">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <motion.h2
+                  className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  Complete Wellness Experience
+                </motion.h2>
+                <motion.p
+                  className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                >
+                  Beyond conversations, explore our full suite of mental wellness tools
+                </motion.p>
+              </div>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
               >
-                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-lg max-w-4xl mx-auto"></div>}>
-                  <ChatCard
-                    user={user}
-                    balance={balance}
-                    selectedAvatar={{
-                      id: selectedAvatar,
-                      name: currentAvatarInfo.name,
-                      src: currentAvatarInfo.src,
-                      description: currentAvatarInfo.description,
-                      gradient: avatarThemes[selectedAvatar]?.gradient || 'from-pink-200 to-purple-200'
-                    }}
-                  />
-                </Suspense>
+                <ServiceCards />
               </motion.div>
-            </section>
-
-            {/* Service Cards Section - After chat like in SimplifiedHero */}
-            <section className="px-4 mb-16">
-              <div className="max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <motion.h2
-                    className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.7 }}
-                  >
-                    Complete Wellness Experience
-                  </motion.h2>
-                  <motion.p
-                    className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.8 }}
-                  >
-                    Beyond conversations, explore our full suite of mental wellness tools
-                  </motion.p>
-                </div>
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.9 }}
-                >
-                  <ServiceCards />
-                </motion.div>
-              </div>
-            </section>
-
-          </div>
-        </div>
+            </div>
+          </section>
+        </>
       )}
 
 
