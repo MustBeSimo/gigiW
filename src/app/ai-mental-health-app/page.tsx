@@ -23,8 +23,6 @@ export default function AIMentalHealthAppPage() {
     <div className="min-h-screen">
       <Hero 
         onStartDemo={handleStartDemo}
-        selectedAvatar={selectedAvatar}
-        onAvatarChange={handleAvatarChange}
       />
       
       {/* Compliance Disclaimer */}
