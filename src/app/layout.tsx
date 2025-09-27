@@ -71,9 +71,9 @@ export default function RootLayout({
         </Script>
         <StructuredData />
       </head>
-      <body className={`${inter.variable} font-inter min-h-screen antialiased overflow-x-hidden text-neutral-800 dark:text-neutral-200 transition-colors duration-300`}>
-        <SimpleBackground />
+      <body className={`${inter.variable} font-inter min-h-screen antialiased overflow-x-hidden text-neutral-800 dark:text-neutral-200 transition-colors duration-300 will-change-auto`}>
         <ThemeProvider defaultAvatar="lumo" defaultDarkMode={false}>
+          <SimpleBackground />
           <ErrorBoundary
             fallbackTitle="Application Error"
             fallbackDescription="We're experiencing technical difficulties. Please try refreshing the page."
