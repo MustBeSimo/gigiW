@@ -1,8 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
+import BreathingMiniApp from '@/components/BreathingMiniApp';
+import MoodCheckinCard from '@/components/MoodCheckinCard';
+import Guides from '@/components/Guides';
 
 interface ServiceCardsProps {
   className?: string;
@@ -10,24 +13,14 @@ interface ServiceCardsProps {
 
 const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
   const { themeClasses } = useTheme();
+  const [activeService, setActiveService] = useState<string | null>(null);
 
   const handleServiceClick = (serviceId: string) => {
-    switch (serviceId) {
-      case 'mindair':
-        // TODO: Navigate to breathing exercises
-        alert('🌬️ MindAir breathing exercises coming soon!');
-        break;
-      case 'mindguide':
-        // TODO: Navigate to personalized guidance
-        alert('🧭 MindGuide personalized guidance coming soon!');
-        break;
-      case 'vibecheck':
-        // TODO: Navigate to mood tracking
-        alert('💫 VibeCheck mood tracking coming soon!');
-        break;
-      default:
-        break;
-    }
+    setActiveService(serviceId);
+  };
+
+  const handleCloseService = () => {
+    setActiveService(null);
   };
 
   const services = [
@@ -61,7 +54,8 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
   ];
 
   return (
-    <div className={`grid md:grid-cols-3 gap-6 ${className}`}>
+    <>
+      <div className={`grid md:grid-cols-3 gap-6 ${className}`}>
       {services.map((service, index) => (
         <motion.div
           key={service.id}
@@ -113,7 +107,57 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
           </div>
         </motion.div>
       ))}
-    </div>
+      </div>
+
+      {/* Service Components as Overlays */}
+    {activeService === 'mindair' && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+          <button
+            onClick={handleCloseService}
+            className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <BreathingMiniApp />
+        </div>
+      </div>
+    )}
+
+    {activeService === 'mindguide' && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+          <button
+            onClick={handleCloseService}
+            className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <Guides />
+        </div>
+      </div>
+    )}
+
+    {activeService === 'vibecheck' && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+          <button
+            onClick={handleCloseService}
+            className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <MoodCheckinCard />
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

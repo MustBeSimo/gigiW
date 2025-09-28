@@ -197,7 +197,7 @@ export default function SimplifiedHero({ onUpgrade }: SimplifiedHeroProps) {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header section with title */}
         <motion.div
-          className="pt-8 pb-6 px-4 text-center"
+          className="pt-20 pb-6 px-4 text-center"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}

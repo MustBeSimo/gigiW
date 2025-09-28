@@ -120,16 +120,13 @@ const SimpleChatInput: React.FC<SimpleChatInputProps> = ({
       >
 
         {/* Chat History - Shows above input when expanded */}
-        <AnimatePresence mode="wait">
-          {isExpanded && chatHistory.length > 0 && (
-            <motion.div
-              key="chat-history"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="border-b border-gray-100 dark:border-gray-700"
-            >
+        {isExpanded && chatHistory.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="border-b border-gray-100 dark:border-gray-700"
+          >
               <div className="p-4 pb-2">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -143,7 +140,7 @@ const SimpleChatInput: React.FC<SimpleChatInputProps> = ({
                 >
                   {chatHistory.map((message, index) => (
                     <motion.div
-                      key={index}
+                      key={`${message.timestamp}-${index}`}
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -176,8 +173,7 @@ const SimpleChatInput: React.FC<SimpleChatInputProps> = ({
                 </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+        )}
 
         <div className="flex items-start gap-4 p-4 md:p-6">
           {/* Avatar */}
