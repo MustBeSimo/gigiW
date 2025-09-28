@@ -12,7 +12,7 @@ interface ServiceCardsProps {
 }
 
 const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
-  const { themeClasses } = useTheme();
+  const { themeClasses, selectedAvatar } = useTheme();
   const [activeService, setActiveService] = useState<string | null>(null);
 
   const handleServiceClick = (serviceId: string) => {
@@ -121,7 +121,7 @@ const ServiceCards: React.FC<ServiceCardsProps> = ({ className = '' }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <BreathingMiniApp />
+          <BreathingMiniApp selectedAvatar={selectedAvatar} />
         </div>
       </div>
     )}
