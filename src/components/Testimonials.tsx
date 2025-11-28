@@ -70,13 +70,10 @@ export default function Testimonials() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            User Experiences
+            Why People Actually Use It
           </h2>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
-            See what others enjoy about exploring wellness conversations
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            For educational and entertainment purposes only • Not medical advice
+            Real conversations. Real breakthroughs.
           </p>
         </motion.div>
 

@@ -204,51 +204,44 @@ export default function SimplifiedHero({ onUpgrade }: SimplifiedHeroProps) {
         >
           {/* Eyebrow text */}
           <p className="text-sm md:text-base font-semibold text-purple-600 dark:text-purple-400 mb-3 uppercase tracking-wider">
-            AI Wellness Companion for Educational Exploration
+            The Chat App for Thinking Better
           </p>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
-            Explore wellness techniques{' '}
+            Talk it through like you text a therapist—{' '}
             <span className="bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-              anytime, anywhere
+              but faster, cheaper, and less awkward
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
-            Join 100K+ people exploring AI-powered wellness conversations for educational purposes only
+            100K+ people are sorting through their days, bouncing ideas around, and figuring things out with 3 distinct AI personalities. Available 24/7. Instant responses. No appointments.
           </p>
 
-          {/* Educational Disclaimer Banner */}
-          <div className="max-w-3xl mx-auto mb-6">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-xl p-4">
-              <div className="flex items-start gap-2">
-                <span className="text-yellow-600 dark:text-yellow-400 text-lg flex-shrink-0">⚠️</span>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                  <strong>Educational & Entertainment Only</strong> - Not therapy, medical advice, or professional mental health treatment. Ages 18+. Crisis? Call 988 (US) or local emergency services.
-                </p>
-              </div>
+          {/* Trust signals + Legal note combined, subtle */}
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm md:text-base text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                100% Private
+              </span>
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                24/7 Available
+              </span>
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                4.9/5 Rating
+              </span>
             </div>
-          </div>
-
-          {/* Trust signals */}
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm md:text-base text-gray-600 dark:text-gray-400 mb-8">
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              100% Private
-            </span>
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Educational Content
-            </span>
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              4.9/5 User Rating
-            </span>
+            <p className="text-xs text-gray-500 dark:text-gray-500 text-center mx-auto max-w-2xl">
+              For personal insight and fun conversations. Not a substitute for professional mental health services. In crisis? <span className="font-semibold">Call 988 (US)</span>
+            </p>
           </div>
         </motion.div>
 
@@ -455,10 +448,10 @@ export default function SimplifiedHero({ onUpgrade }: SimplifiedHeroProps) {
           >
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-8 border border-gray-200 dark:border-gray-700 shadow-xl max-w-2xl mx-auto">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                Ready to explore wellness conversations?
+                Ready to start thinking out loud?
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Join thousands exploring AI wellness conversations. Start with 20 free messages for educational purposes.
+                Get 20 free conversations. Pick which personality you vibe with most and start talking through whatever's on your mind.
               </p>
               <button
                 onClick={signInWithGoogle}
@@ -470,7 +463,7 @@ export default function SimplifiedHero({ onUpgrade }: SimplifiedHeroProps) {
                   <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Try 20 Free Messages →
+                Start Thinking Out Loud →
               </button>
             </div>
           </motion.div>
