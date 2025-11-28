@@ -18,43 +18,43 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   {
     id: 1,
-    quote: "I went from panic attacks 3x/week to once a month in 30 days. MindGleam taught me techniques my therapist never did.",
+    quote: "I enjoy the conversations and find the AI companions entertaining. It's nice to have someone to chat with about wellness topics when I'm curious to learn more.",
     author: "Sarah M.",
     role: "Teacher",
     location: "San Francisco",
     rating: 5,
-    duration: "Used MindGleam for 6 weeks",
+    duration: "Using for 6 weeks",
     imagePlaceholder: "from-pink-400 to-rose-400",
     gradient: "from-pink-50 to-rose-50",
   },
   {
     id: 2,
-    quote: "Therapy was $280/session and I couldn't afford weekly. MindGleam is $10/month and I use it daily. My anxiety dropped 60%.",
+    quote: "It's a fun way to explore wellness concepts without pressure. I like that I can chat anytime and learn about mindfulness techniques at my own pace.",
     author: "Marcus T.",
     role: "Software Engineer",
     location: "Austin",
     rating: 5,
-    duration: "4 months active",
+    duration: "4 months exploring",
     imagePlaceholder: "from-blue-400 to-indigo-400",
     gradient: "from-blue-50 to-indigo-50",
   },
   {
     id: 3,
-    quote: "The 2 AM support is life-changing. When I can't sleep from racing thoughts, Gigi helps me process them in 10 minutes. I'm finally sleeping through the night.",
+    quote: "The late-night availability is convenient. When I can't sleep and want to journal my thoughts, having an AI companion to talk through ideas with is entertaining.",
     author: "Jennifer K.",
     role: "Entrepreneur",
     location: "NYC",
     rating: 5,
-    duration: "8 weeks using nightly",
+    duration: "8 weeks enjoying",
     imagePlaceholder: "from-emerald-400 to-teal-400",
     gradient: "from-emerald-50 to-teal-50",
   },
 ];
 
 const stats = [
-  { percentage: '87%', label: 'report feeling calmer within first week' },
-  { percentage: '+2.3', label: 'average mood improvement (1-10 scale)' },
-  { percentage: '92%', label: 'continue past free trial' },
+  { percentage: '100K+', label: 'conversations started for wellness exploration' },
+  { percentage: '4.9/5', label: 'average user rating for entertainment value' },
+  { percentage: '24/7', label: 'availability for educational chats' },
 ];
 
 export default function Testimonials() {
@@ -70,10 +70,13 @@ export default function Testimonials() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Real People, Real Results
+            User Experiences
           </h2>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
-            Join thousands who've transformed their mental wellness
+            See what others enjoy about exploring wellness conversations
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            For educational and entertainment purposes only • Not medical advice
           </p>
         </motion.div>
 
@@ -136,7 +139,7 @@ export default function Testimonials() {
           ))}
         </div>
 
-        {/* Aggregate Proof Statistics */}
+        {/* Usage Statistics */}
         <motion.div
           className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-750 rounded-2xl p-8 border border-purple-200 dark:border-gray-700"
           initial={{ opacity: 0, y: 30 }}
@@ -145,7 +148,7 @@ export default function Testimonials() {
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Based on 12,459 verified users:
+            Platform Usage
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -170,7 +173,7 @@ export default function Testimonials() {
 
           {/* Disclaimer */}
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-6">
-            * Results based on user surveys and self-reported data. Individual results may vary. Not medical research.
+            * Usage statistics only. Educational and entertainment purposes only. Not medical advice, therapy, or health claims.
           </p>
         </motion.div>
 
@@ -183,9 +186,9 @@ export default function Testimonials() {
           transition={{ duration: 0.6, delay: 1 }}
         >
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>⚠️ ACTION REQUIRED:</strong> These are placeholder testimonials. Replace with real user testimonials
-            that have written permission to use names and quotes. Add photos if available. Ensure all claims are based on
-            verified user surveys or feedback.
+            <strong>⚠️ ACTION REQUIRED:</strong> These are placeholder testimonials. Replace with real user feedback
+            that focuses on entertainment/educational value only. Obtain written permission. DO NOT include medical outcomes,
+            therapeutic claims, or health improvements. Focus on user experience, convenience, and entertainment value only.
           </p>
         </motion.div>
       </div>

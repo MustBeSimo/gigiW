@@ -5,23 +5,23 @@ import { motion } from 'framer-motion';
 export default function ProblemAgitate() {
   const problems = [
     {
-      emoji: '😰',
-      title: 'Racing Thoughts at 2 AM',
-      description: 'You lie awake, replaying conversations, worrying about tomorrow. Your mind won\'t stop. Sleep feels impossible.',
+      emoji: '💭',
+      title: 'Busy Mind, Little Time',
+      description: 'Life moves fast and it\'s hard to find moments for self-reflection. Sometimes you just want someone to talk through your day with.',
       gradient: 'from-blue-500/10 to-indigo-500/10',
       borderColor: 'border-blue-400/30',
     },
     {
-      emoji: '😔',
-      title: 'Anxiety That Won\'t Quit',
-      description: 'Every task feels overwhelming. You know you "should" feel better, but the worry follows you everywhere—work, home, even fun moments.',
+      emoji: '🤔',
+      title: 'Curious About Wellness',
+      description: 'You\'re interested in learning about mindfulness and self-care techniques, but don\'t know where to start exploring.',
       gradient: 'from-purple-500/10 to-pink-500/10',
       borderColor: 'border-purple-400/30',
     },
     {
-      emoji: '😤',
-      title: 'Expensive Therapy Waitlists',
-      description: 'You want help, but therapy costs $200+/session and waitlists are 8+ weeks. You need support NOW, not next quarter.',
+      emoji: '🌙',
+      title: 'Late-Night Conversations',
+      description: 'Sometimes you just want to chat about what\'s on your mind, even at odd hours when friends might not be available.',
       gradient: 'from-rose-500/10 to-orange-500/10',
       borderColor: 'border-rose-400/30',
     },
@@ -39,10 +39,10 @@ export default function ProblemAgitate() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            You're Not Alone
+            Made for Curious Minds
           </h2>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Millions struggle with these same challenges every day
+            Explore wellness concepts in a judgment-free space
           </p>
         </motion.div>
 
@@ -85,13 +85,13 @@ export default function ProblemAgitate() {
             </div>
             <div className="flex-1">
               <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed italic mb-4">
-                "I built MindGleam after my own burnout showed me that mental wellness shouldn't be gatekept by cost or availability. Everyone deserves a companion who's there at 2 AM."
+                "We created MindGleam as an educational tool for people curious about wellness concepts. It's designed for entertainment and learning—not as a replacement for professional mental health care."
               </p>
               <p className="text-base font-semibold text-gray-900 dark:text-white">
                 — The MindGleam Team
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Mental wellness advocates & builders
+                Wellness education & entertainment
               </p>
             </div>
           </div>
