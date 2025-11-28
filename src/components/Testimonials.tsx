@@ -174,20 +174,6 @@ export default function Testimonials() {
           </p>
         </motion.div>
 
-        {/* Note for Implementation */}
-        <motion.div
-          className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 1 }}
-        >
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>⚠️ ACTION REQUIRED:</strong> These are placeholder testimonials. Replace with real user feedback
-            that focuses on entertainment/educational value only. Obtain written permission. DO NOT include medical outcomes,
-            therapeutic claims, or health improvements. Focus on user experience, convenience, and entertainment value only.
-          </p>
-        </motion.div>
       </div>
     </section>
   );

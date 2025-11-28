@@ -17,7 +17,6 @@ import { supabase } from '@/utils/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Profile } from '@/types/database';
 import { motion } from 'framer-motion';
-import { GeneralDisclaimer, CrisisBanner } from '@/components/ComplianceDisclaimer';
 import MindGleamLogoAnimated from '@/components/MindGleamLogoAnimated';
 import ServiceCards from '@/components/ServiceCards';
 import { avatarThemes } from '@/utils/avatarThemes';
@@ -285,12 +284,6 @@ export default function HomeClient() {
       )}
 
 
-      {/* Minimal Compliance Footer */}
-      <section className="py-8 bg-gray-100 dark:bg-gray-900">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <GeneralDisclaimer compact className="mx-auto" />
-        </div>
-      </section>
 
       {/* Footer */}
       <Footer />
