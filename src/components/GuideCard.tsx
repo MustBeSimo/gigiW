@@ -2,12 +2,36 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { User } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import AnimatedText from '@/components/AnimatedText';
 import ThoughtRecordGuide from '@/components/ThoughtRecordGuide';
 import BreathingTechniquesGuide from '@/components/BreathingTechniquesGuide';
 import EnergyBoostWorkoutGuide from '@/components/EnergyBoostWorkoutGuide';
 import SleepHygieneGuide from '@/components/SleepHygieneGuide';
+
+// Type definitions for guides
+interface Guide {
+  title: string;
+  description: string;
+  imageSrc: string;
+  downloadUrl: string;
+  hasInteractive: boolean;
+  isFree: boolean;
+  requiresSignIn?: boolean;
+  isExternal?: boolean;
+  tags: string[];
+  guideComponent: 'thought-record' | 'breathing' | 'workout' | 'sleep';
+}
+
+interface GuideCategory {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  guides: Guide[];
+}
 
 interface GuideCardProps {
   title?: string;
@@ -31,7 +55,7 @@ export default function GuideCard({
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const guideCategories = [
+  const guideCategories: GuideCategory[] = [
     {
       id: 'free-tools',
       title: 'Free Wellness Tools',
@@ -47,7 +71,7 @@ export default function GuideCard({
           hasInteractive: true,
           isFree: true,
           tags: ['CBT', 'Anxiety', 'Depression'],
-          guideComponent: 'thought-record'
+          guideComponent: 'thought-record' as const
         },
         {
           title: "Breathing Techniques Collection",
@@ -57,7 +81,7 @@ export default function GuideCard({
           hasInteractive: true,
           isFree: true,
           tags: ['Stress', 'Anxiety', 'Sleep'],
-          guideComponent: 'breathing'
+          guideComponent: 'breathing' as const
         },
         {
           title: "10-Minute Energy Boost Workout",
@@ -67,7 +91,7 @@ export default function GuideCard({
           hasInteractive: true,
           isFree: true,
           tags: ['Exercise', 'Energy', 'Mood', 'Physical'],
-          guideComponent: 'workout'
+          guideComponent: 'workout' as const
         },
         {
           title: "Sleep Hygiene Checklist",
@@ -77,7 +101,7 @@ export default function GuideCard({
           hasInteractive: true,
           isFree: true,
           tags: ['Sleep', 'Recovery', 'Physical', 'Mental Health'],
-          guideComponent: 'sleep'
+          guideComponent: 'sleep' as const
         }
       ]
     }
@@ -239,9 +263,9 @@ Thank you!`);
 }
 
 interface GuideItemProps {
-  guide: any;
-  category: any;
-  user: any;
+  guide: Guide;
+  category: GuideCategory;
+  user: User | null;
   onStartInteractive: () => void;
 }
 
