@@ -3,6 +3,8 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { authenticateApiRoute } from '@/utils/supabase-server';
 import { MoodLog, PeriodMoodReport } from '@/types/database';
+import { checkRateLimit, createRateLimitResponse, rateLimitConfig } from '@/utils/rateLimit';
+import { getTogetherApiKey } from '@/utils/env-validation';
 
 interface PeriodReportRequest {
   period: string;
@@ -79,6 +81,25 @@ export async function POST(request: NextRequest) {
   };
 
   try {
+    // Validate required environment variables
+    const apiKey = getTogetherApiKey();
+    if (!apiKey) {
+      console.error('[Vercel] Missing TOGETHER_API_KEY environment variable');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again later.' },
+        { status: 503, headers }
+      );
+    }
+
+    // Check rate limits for expensive operation
+    const rateLimit = checkRateLimit(request, rateLimitConfig.expensive);
+    if (!rateLimit.allowed) {
+      const rateLimitResponse = createRateLimitResponse(rateLimit, rateLimitConfig.expensive);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+    }
+
     console.log('[Vercel] Starting mood report generation...');
     
     // Create Supabase client with proper cookie handling for Vercel

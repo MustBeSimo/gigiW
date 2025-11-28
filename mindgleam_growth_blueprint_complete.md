@@ -1,4 +1,4 @@
-# MindGleam Growth Blueprint
+`# MindGleam Growth Blueprint
 ## 12-Month Strategy for 300% YoY Growth
 
 ---

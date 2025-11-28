@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedText from '@/components/AnimatedText';
 import Script from 'next/script';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getAvatarClasses } from '@/utils/avatarThemes';
+import { MESSAGE_LIMITS } from '@/config/limits';
 
 interface Avatar {
   id: 'gigi' | 'vee' | 'lumo';
@@ -42,8 +43,8 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
   const [isTyping, setIsTyping] = useState(false);
   const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [crisisTriggerWord, setCrisisTriggerWord] = useState<string | null>(null);
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDarkMode } = useTheme();
+  const isDark = isDarkMode;
 
   // Get avatar-specific styling
   const avatarClasses = selectedAvatar ? getAvatarClasses(selectedAvatar.id, isDark) : null;
@@ -89,7 +90,11 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
     }
   };
 
-  const personality = getAvatarPersonality(selectedAvatar);
+  // Memoize personality calculation to prevent unnecessary re-renders
+  const personality = useMemo(
+    () => getAvatarPersonality(selectedAvatar),
+    [selectedAvatar]
+  );
   
   const [chatMessages, setChatMessages] = useState<{ text: string; isUser: boolean }[]>([
     { text: personality.initialMessage, isUser: false },
@@ -107,8 +112,8 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isTyping) return;
-    // If not signed in and used all 3 demo messages, block further input
-    if (!user && demoMessageCount >= 3) return;
+    // If not signed in and used all demo messages, block further input
+    if (!user && demoMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES) return;
 
     // Check for crisis keywords before sending
     const crisisKeyword = detectCrisisKeywords(message);
@@ -280,16 +285,16 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
                 )}
               </div>
 
-              {user || demoMessageCount < 3 ? (
+              {user || demoMessageCount < MESSAGE_LIMITS.DEMO_FREE_MESSAGES ? (
                 <form onSubmit={handleSendMessage} className="p-4 border-t bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder={!user && demoMessageCount >= 3 ? "Sign in for more messages..." : "Type your message..."}
+                      placeholder={!user && demoMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES ? "Sign in for more messages..." : "Type your message..."}
                       className="flex-1 bg-white dark:bg-gray-600 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300 rounded-lg px-4 py-3 text-base outline-none focus:ring-2 focus:ring-blue-400 border border-gray-200 dark:border-gray-600"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      disabled={(!user && demoMessageCount >= 3) || isTyping}
+                      disabled={(!user && demoMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES) || isTyping}
                     />
                     <motion.button
                       type="submit"
@@ -299,7 +304,7 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
                       `}
                       whileHover={{ scale: isTyping ? 1 : 1.05 }}
                       whileTap={{ scale: isTyping ? 1 : 0.95 }}
-                      disabled={!message.trim() || (!user && demoMessageCount >= 3) || isTyping}
+                      disabled={!message.trim() || (!user && demoMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES) || isTyping}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -311,7 +316,7 @@ export default function ChatCard({ className = '', user: propUser, balance, sele
                   {!user && (
                     <div className="mt-2 text-xs text-center">
                       <span className="text-blue-600 dark:text-blue-400 font-medium">
-                        {3 - demoMessageCount} free messages remaining
+                        {MESSAGE_LIMITS.DEMO_FREE_MESSAGES - demoMessageCount} free messages remaining
                       </span>
                     </div>
                   )}

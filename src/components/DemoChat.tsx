@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import CrisisResourceModal, { detectCrisisKeywords } from './CrisisResourceModal';
+import { MESSAGE_LIMITS } from '@/config/limits';
+import { getEncryptedStorage, setEncryptedStorage } from '@/utils/encryption';
 
 interface DemoChatProps {
   isOpen: boolean;
@@ -120,12 +122,13 @@ export default function DemoChat({ isOpen, onClose, selectedAvatar }: DemoChatPr
       setInputValue('');
       setIsTyping(false);
     } else {
-      // Initialize user message count from localStorage when opening
+      // Initialize user message count from encrypted localStorage when opening
       if (typeof window !== 'undefined') {
-        const demoData = localStorage.getItem('mindgleam_demo_chat');
+        const demoData = getEncryptedStorage<{ count: number; lastUsed?: string }>(
+          'mindgleam_demo_chat'
+        );
         if (demoData) {
-          const parsedData = JSON.parse(demoData);
-          setUserMessageCount(parsedData.count || 0);
+          setUserMessageCount(demoData.count || 0);
         }
       }
     }
@@ -177,9 +180,9 @@ export default function DemoChat({ isOpen, onClose, selectedAvatar }: DemoChatPr
     }
   };
 
-  // Only allow 3 real user messages after onboarding
+  // Only allow demo free messages after onboarding
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || userMessageCount >= 3) return;
+    if (!inputValue.trim() || userMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES) return;
     const userMessage = inputValue.trim();
     // Check for crisis keywords before sending
     const crisisKeyword = detectCrisisKeywords(userMessage);
@@ -198,12 +201,12 @@ export default function DemoChat({ isOpen, onClose, selectedAvatar }: DemoChatPr
     setMessages(prev => [...prev, newUserMessage]);
     const newUserMessageCount = userMessageCount + 1;
     setUserMessageCount(newUserMessageCount);
-    // Update localStorage
+    // Update encrypted localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mindgleam_demo_chat', JSON.stringify({
+      setEncryptedStorage('mindgleam_demo_chat', {
         count: newUserMessageCount,
         lastUsed: new Date().toISOString()
-      }));
+      });
     }
     setIsTyping(true);
     try {
@@ -358,7 +361,7 @@ export default function DemoChat({ isOpen, onClose, selectedAvatar }: DemoChatPr
 
           {/* Input Area */}
           <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-            {userMessageCount >= 3 ? (
+            {userMessageCount >= MESSAGE_LIMITS.DEMO_FREE_MESSAGES ? (
               <div className="text-center space-y-4">
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">

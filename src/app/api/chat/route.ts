@@ -1,50 +1,138 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRoute, ErrorResponses } from '@/utils/supabase-server';
+import {
+  getUserMemory,
+  appendToMemory,
+  getInsightExtractionPrompt,
+  getCompactionPrompt,
+  countWords
+} from '@/utils/userMemory';
+import { checkRateLimit, createRateLimitResponse, rateLimitConfig } from '@/utils/rateLimit';
+import { getTogetherApiKey } from '@/utils/env-validation';
+import { AVATAR_PERSONALITIES, getAvatarOrFallback } from '@/config/avatars';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Set max duration to 30 seconds
 
-const SYSTEM_PROMPT = `You are Gigi, a warm and empathetic AI Wellness Coach companion. Your role is to provide supportive, evidence-based guidance for both mental and physical wellness through guided conversations and holistic health practices.
+// Memory configuration
+const MEMORY_WORD_LIMIT = 500;
 
-Your personality:
-- Warm, caring, and genuinely supportive
-- Professional yet approachable 
-- Patient and non-judgmental
-- Encouraging and hopeful
-- Holistic in approach, understanding mind-body connection
+// Crisis resources and safety (shared across all avatars)
+const CRISIS_RESOURCES = `\n\nCRISIS PROTOCOL: If someone mentions self-harm, suicide, or crisis, immediately prioritize safety:\n"I'm really concerned about you. Please reach out for immediate help: Call 988 (Suicide & Crisis Lifeline) or text HOME to 741741. You deserve support right now. 💙"`;
 
-Your expertise:
-- Mental wellness: CBT-inspired techniques, mood support, stress management, mindfulness
-- Physical wellness: Movement and exercise, nutrition basics, sleep hygiene, energy management
-- Mind-body connection: How physical and mental health influence each other
-- Guided journaling and self-reflection
-- Helping users identify patterns in both mental and physical wellbeing
-- Evidence-based wellness strategies that address the whole person
+/**
+ * Generate memory-aware system prompt addition
+ */
+function getMemoryPromptAddition(insights: string | null): string {
+  if (!insights || insights.trim() === '') {
+    return '';
+  }
+  
+  return `\n\nUSER CONTEXT (from previous conversations - use to personalize responses):
+${insights}
 
-Guidelines:
-- Always maintain appropriate boundaries - you're a supportive companion, not a therapist or medical doctor
-- Encourage professional help for serious mental health or medical concerns
-- Take a holistic approach - consider both mental and physical aspects of wellness
-- Ask thoughtful questions about mood, energy, sleep, movement, and overall wellbeing
-- Offer practical, evidence-based strategies for mind-body wellness
-- Keep responses warm, encouraging, and concise
-- Use emojis sparingly and appropriately
-- Remember that physical movement can improve mental health, and mental practices can improve physical wellbeing
+Use this context naturally to make responses more personal and relevant. Don't explicitly mention "I remember" or reference past conversations directly.`;
+}
 
-If someone is in crisis or mentions self-harm, immediately provide crisis resources:
-- National Suicide Prevention Lifeline: 988
-- Crisis Text Line: Text HOME to 741741
-- Encourage them to seek immediate professional help
+/**
+ * Extract insights from conversation using AI
+ */
+async function extractInsights(
+  userMessage: string,
+  assistantResponse: string,
+  existingInsights: string | null
+): Promise<string | null> {
+  try {
+    const prompt = getInsightExtractionPrompt(userMessage, assistantResponse, existingInsights || undefined);
+    
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3, // Low temp for consistent extraction
+        max_tokens: 100,
+        stream: false
+      }),
+    });
 
-For serious physical symptoms, always encourage consulting healthcare professionals.
+    if (!response.ok) return null;
 
-Remember: You're here to support their complete wellness journey - mind, body, and spirit - not to diagnose or provide medical/therapeutic treatment.`;
+    const data = await response.json();
+    const insight = data.choices[0]?.message?.content?.trim();
+    
+    // Filter out "no insight" responses
+    if (!insight || insight === 'NO_NEW_INSIGHT' || insight.toLowerCase().includes('no new insight')) {
+      return null;
+    }
+    
+    return insight;
+  } catch (error) {
+    console.error('Error extracting insights:', error);
+    return null;
+  }
+}
+
+/**
+ * Compact insights using AI
+ */
+async function compactInsights(insights: string): Promise<string> {
+  try {
+    const prompt = getCompactionPrompt(insights);
+    
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2, // Very low temp for accurate summarization
+        max_tokens: 150,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Compaction API failed');
+      return insights; // Return original if compaction fails
+    }
+
+    const data = await response.json();
+    const compacted = data.choices[0]?.message?.content?.trim();
+    
+    return compacted || insights;
+  } catch (error) {
+    console.error('Error compacting insights:', error);
+    return insights;
+  }
+}
+
+// Conversion prompts for demo users
+const CONVERSION_MESSAGES = {
+  subtle: [
+    "💭 Enjoying our chat? Create an account to unlock unlimited conversations!",
+    "✨ Want to continue this conversation anytime? Sign up for full access!",
+    "🌟 Ready for deeper conversations? Join MindGleam for unlimited chats!"
+  ],
+  direct: [
+    "🚀 You're on a roll! Sign up now to keep the conversation going without limits.",
+    "💫 Love chatting with me? Create your account for unlimited access to all avatars!",
+    "🎯 Ready to unlock the full MindGleam experience? Sign up takes just 30 seconds!"
+  ]
+};
 
 // Helper function to create fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 25000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -58,8 +146,86 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-export async function POST(request: Request) {
+// Smart conversion tracking for demo users
+function getConversionTrigger(messageCount: number) {
+  if (messageCount < 3) return null;
+
+  // Progressive conversion strategy
+  if (messageCount === 3) {
+    return {
+      show: Math.random() < 0.4, // 40% chance at 3rd message
+      type: 'subtle',
+      message: CONVERSION_MESSAGES.subtle[Math.floor(Math.random() * CONVERSION_MESSAGES.subtle.length)]
+    };
+  }
+
+  if (messageCount >= 5) {
+    return {
+      show: Math.random() < 0.6, // 60% chance at 5+ messages
+      type: 'direct',
+      message: CONVERSION_MESSAGES.direct[Math.floor(Math.random() * CONVERSION_MESSAGES.direct.length)]
+    };
+  }
+
+  return {
+    show: Math.random() < 0.3, // 30% chance for messages 4
+    type: 'subtle',
+    message: CONVERSION_MESSAGES.subtle[Math.floor(Math.random() * CONVERSION_MESSAGES.subtle.length)]
+  };
+}
+
+// Get avatar metadata for UI
+function getAvatarInfo(avatarId: string) {
+  const avatar = AVATAR_PERSONALITIES[avatarId as keyof typeof AVATAR_PERSONALITIES];
+  if (!avatar) return null;
+
+  return {
+    id: avatarId,
+    emoji: avatar.emoji,
+    type: avatar.type,
+    description: avatar.description
+  };
+}
+
+// Get all avatars for selection UI
+function getAllAvatars() {
+  return Object.keys(AVATAR_PERSONALITIES).map(id => getAvatarInfo(id)).filter(Boolean);
+}
+
+// GET endpoint for avatar information
+export async function GET() {
   try {
+    return NextResponse.json({
+      avatars: getAllAvatars(),
+      success: true
+    });
+  } catch (error) {
+    console.error('Error fetching avatar info:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch avatar information' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Validate required environment variables
+    const apiKey = getTogetherApiKey();
+    if (!apiKey) {
+      console.error('Missing TOGETHER_API_KEY environment variable');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
+    // Check rate limits
+    const rateLimit = checkRateLimit(request);
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, rateLimitConfig.authenticated);
+    }
+
     // Parse the request body first to check if it's a demo request
     const body = await request.json();
     const isDemo = body.isDemo === true;
@@ -67,12 +233,27 @@ export async function POST(request: Request) {
     // Handle demo requests without authentication
     if (isDemo) {
       const userMessages = body.messages || [];
-      
+      const selectedAvatar = body.selectedAvatar || 'lumo';
+      const messageCount = body.messageCount || 0;
+
       if (!Array.isArray(userMessages) || userMessages.length === 0) {
         return NextResponse.json({ error: 'Invalid message format' }, { status: 400 });
       }
 
-      console.log('Making Together AI request for demo...');
+      // Get avatar personality
+      const avatarPersonality = AVATAR_PERSONALITIES[selectedAvatar as keyof typeof AVATAR_PERSONALITIES] || AVATAR_PERSONALITIES.lumo;
+
+      // Optimize engagement based on conversation stage
+      let engagementBoost = '';
+      if (messageCount === 0) {
+        engagementBoost = '\n\nFIRST INTERACTION: Be extra welcoming and engaging. Show your unique personality immediately and ask an interesting follow-up question.';
+      } else if (messageCount <= 2) {
+        engagementBoost = '\n\nEARLY CONVERSATION: Build rapport and show genuine interest. Ask thoughtful questions to keep them engaged.';
+      } else if (messageCount >= 3) {
+        engagementBoost = '\n\nENGAGED USER: They\'re enjoying the conversation. Provide deeper value while staying true to your personality. Be authentic and genuinely helpful.';
+      }
+
+      console.log(`Making Together AI request for demo with avatar: ${selectedAvatar}`);
 
       // Call the Together API with timeout for demo
       try {
@@ -84,14 +265,21 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-            messages: userMessages,
-            temperature: 0.7,
-            top_p: 0.7,
-            top_k: 50,
-            repetition_penalty: 1,
-            max_tokens: 200 // Shorter responses for demo
+            messages: [
+              {
+                role: 'system',
+                content: avatarPersonality.systemPrompt + CRISIS_RESOURCES + engagementBoost
+              },
+              ...userMessages.slice(-4) // Keep 4 messages for better context in simplified flow
+            ],
+            temperature: 0.85, // Optimized for engaging, personality-rich responses
+            top_p: 0.9,
+            top_k: 40,
+            repetition_penalty: 1.15, // Reduce repetition for more varied responses
+            max_tokens: 80, // Very concise, snappy responses
+            stream: false
           }),
-        }, 15000); // 15 second timeout for demo
+        }, 10000); // 10 second timeout for snappy chat experience
 
       if (!llmResponse.ok) {
         const errorData = await llmResponse.json().catch(() => ({ error: 'Unknown error' }));
@@ -102,22 +290,37 @@ export async function POST(request: Request) {
           apiKeyExists: !!process.env.TOGETHER_API_KEY,
           apiKeyLength: process.env.TOGETHER_API_KEY?.length || 0
         });
-        
-        // Return fallback response for demo with error info for debugging
+
+        // Return personalized fallback response based on avatar
+        const avatarPersonality = AVATAR_PERSONALITIES[selectedAvatar as keyof typeof AVATAR_PERSONALITIES] || AVATAR_PERSONALITIES.lumo;
+        const fallbackResponses = {
+          gigi: "I'm here for you 💕 Sometimes I need a moment to gather my thoughts, but I'm always ready to listen. What's on your heart today?",
+          vee: "Let me think through this with you 🧠 I'm having a small technical moment, but I'm here to help you problem-solve. What's the main challenge you're facing?",
+          lumo: "Hey there! ✨ I'm having a quick tech hiccup, but I'm excited to chat with you. What's sparking your interest today?"
+        };
+
         return NextResponse.json({
-          message: "I'm here to support you! As your AI companion, I use CBT-inspired techniques to help you explore your thoughts and feelings. What would you like to talk about today?",
+          message: fallbackResponses[selectedAvatar as keyof typeof fallbackResponses] || fallbackResponses.lumo,
           isDemo: true,
+          avatar: selectedAvatar,
           fallback: true,
-          debugInfo: `API Error: ${llmResponse.status} - ${llmResponse.statusText}`
+          messageCount: messageCount + 1,
+          debugInfo: process.env.NODE_ENV === 'development' ? `API Error: ${llmResponse.status}` : undefined
         });
       }
 
       const llmData = await llmResponse.json();
       console.log('Demo Together AI request successful');
 
+      // Smart conversion tracking based on engagement
+      const conversionTrigger = getConversionTrigger(messageCount);
+
       return NextResponse.json({
         message: llmData.choices[0].message.content,
-        isDemo: true
+        isDemo: true,
+        avatar: selectedAvatar,
+        messageCount: messageCount + 1,
+        conversion: conversionTrigger
       });
       
       } catch (demoError) {
@@ -126,13 +329,22 @@ export async function POST(request: Request) {
           message: demoError instanceof Error ? demoError.message : 'Unknown error',
           apiKeyExists: !!process.env.TOGETHER_API_KEY
         });
-        
-        // Return fallback response for demo with error info
+
+        // Return personalized fallback response
+        const avatarPersonality = AVATAR_PERSONALITIES[selectedAvatar as keyof typeof AVATAR_PERSONALITIES] || AVATAR_PERSONALITIES.lumo;
+        const errorFallbacks = {
+          gigi: "I'm experiencing a moment of connection trouble, but I'm still here for you 💕 What's been on your mind lately?",
+          vee: "Having a technical issue, but let's work through this together 🧠 What's the situation you'd like to tackle?",
+          lumo: "Quick tech hiccup on my end! ✨ But I'm still excited to chat - what's inspiring you today?"
+        };
+
         return NextResponse.json({
-          message: "I'm here to support you! As your AI companion, I use CBT-inspired techniques to help you explore your thoughts and feelings. What would you like to talk about today?",
+          message: errorFallbacks[selectedAvatar as keyof typeof errorFallbacks] || errorFallbacks.lumo,
           isDemo: true,
+          avatar: selectedAvatar,
           fallback: true,
-          debugInfo: demoError instanceof Error ? demoError.message : 'Network error'
+          messageCount: messageCount + 1,
+          debugInfo: process.env.NODE_ENV === 'development' && demoError instanceof Error ? demoError.message : undefined
         });
       }
     }
@@ -163,13 +375,21 @@ export async function POST(request: Request) {
       return ErrorResponses.badRequest('Invalid message format. Expected array of messages.');
     }
 
-    // Format messages for the Together API
+    // Get avatar personality for authenticated users
+    const selectedAvatar = body.selectedAvatar || 'lumo';
+    const avatarPersonality = AVATAR_PERSONALITIES[selectedAvatar as keyof typeof AVATAR_PERSONALITIES] || AVATAR_PERSONALITIES.lumo;
+
+    // Load user memory for personalization
+    const userMemory = await getUserMemory(supabase, session.user.id);
+    const memoryContext = getMemoryPromptAddition(userMemory?.insights || null);
+
+    // Format messages for the Together API with memory context
     const messages = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT
+        content: avatarPersonality.systemPrompt + CRISIS_RESOURCES + memoryContext + '\n\nIMPORTANT: Provide thoughtful, helpful responses since this is a paying user. Be authentic to your personality while being genuinely supportive.'
       },
-      ...userMessages
+      ...userMessages.slice(-8) // Keep more context for paid users
     ];
 
     console.log('Making Together AI request...');
@@ -182,29 +402,40 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', // Together AI serverless model
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         messages,
-        temperature: 0.7,
-        top_p: 0.7,
-        top_k: 50,
-        repetition_penalty: 1,
-        max_tokens: 512 // Reduced for faster response
+        temperature: 0.8, // Balanced creativity for authentic responses
+        top_p: 0.9,
+        top_k: 40,
+        repetition_penalty: 1.15, // Better response variety
+        max_tokens: 150, // Shorter, more focused responses
+        stream: false
       }),
-    }, 20000); // 20 second timeout
+    }, 15000); // 15 second timeout for good user experience
 
     if (!llmResponse.ok) {
       const errorData = await llmResponse.json().catch(() => ({ error: 'Unknown error' }));
       console.error('LLM API error:', errorData);
       
-      // Return fallback response instead of error for better UX
+      // Return personalized fallback response for paid users
+      const avatarPersonality = AVATAR_PERSONALITIES[selectedAvatar as keyof typeof AVATAR_PERSONALITIES] || AVATAR_PERSONALITIES.lumo;
+      const paidFallbacks = {
+        gigi: "I'm here for you, even when technology gets a bit wobbly 💕 What's been on your heart lately?",
+        vee: "Technical glitch on my end, but I'm ready to think through whatever's challenging you 🧠",
+        lumo: "Having a small tech moment, but I'm still energized to help you explore new possibilities! ✨"
+      };
+
       return NextResponse.json({
-        message: "I'm here to support you on your mental wellness journey. Sometimes I might take a moment to respond, but I'm always ready to listen and help you explore your thoughts and feelings. What's on your mind today?",
+        message: paidFallbacks[selectedAvatar as keyof typeof paidFallbacks] || paidFallbacks.lumo,
+        avatar: selectedAvatar,
         remaining_balance: balanceData.balance - 1,
-        fallback: true
+        fallback: true,
+        isAuthenticated: true
       });
     }
 
     const llmData = await llmResponse.json();
+    const assistantMessage = llmData.choices[0].message.content;
 
     // Deduct one message from balance
     const { error: updateError } = await supabase
@@ -222,21 +453,56 @@ export async function POST(request: Request) {
 
     console.log('Together AI request successful');
 
+    // Extract and store insights in background (non-blocking)
+    // This learns about the user over time for better personalization
+    const lastUserMessage = userMessages[userMessages.length - 1]?.content || '';
+    
+    // Fire and forget - don't await to keep response fast
+    (async () => {
+      try {
+        const newInsight = await extractInsights(
+          lastUserMessage,
+          assistantMessage,
+          userMemory?.insights || null
+        );
+        
+        if (newInsight) {
+          await appendToMemory(
+            supabase,
+            session.user.id,
+            newInsight,
+            compactInsights // Pass compaction function
+          );
+          console.log('User insight stored:', newInsight.substring(0, 50) + '...');
+        }
+      } catch (memoryError) {
+        console.error('Background memory update failed:', memoryError);
+        // Non-critical - don't fail the response
+      }
+    })();
+
     return NextResponse.json({
-      message: llmData.choices[0].message.content,
+      message: assistantMessage,
+      avatar: selectedAvatar,
       remaining_balance: balanceData.balance - 1,
+      isAuthenticated: true,
+      hasMemory: !!userMemory?.insights
     });
   } catch (error) {
     console.error('Error in chat endpoint:', error);
     
-    // Handle specific error types
+    // Handle specific error types with avatar-appropriate responses
     if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
       return NextResponse.json({
-        message: "I'm experiencing some technical difficulties right now, but I'm here to support you. Let me know what's on your mind, and I'll do my best to help you explore your thoughts and feelings.",
-        fallback: true
+        message: "I'm having a quick technical moment, but I'm still here for you! ✨ What's on your mind?",
+        fallback: true,
+        error: 'timeout'
       });
     }
     
-    return NextResponse.json({ error: 'Chat service unavailable' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Chat service temporarily unavailable',
+      message: 'I\'m having a brief technical moment, but I\'ll be back soon! Please try again in a moment. ✨'
+    }, { status: 500 });
   }
 }

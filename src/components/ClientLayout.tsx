@@ -1,7 +1,7 @@
+
 'use client';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import Providers from '@/components/Providers';
 import ProgressBar from '@/components/ProgressBar';
 
 interface ClientLayoutProps {
@@ -27,11 +27,9 @@ function ClientLayoutContent({ children }: ClientLayoutProps) {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <AuthProvider>
-      <Providers>
-        <ClientLayoutContent>
-          {children}
-        </ClientLayoutContent>
-      </Providers>
+      <ClientLayoutContent>
+        {children}
+      </ClientLayoutContent>
     </AuthProvider>
   );
 } 

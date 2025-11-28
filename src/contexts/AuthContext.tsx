@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/utils/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { MESSAGE_LIMITS } from '@/config/limits';
 
 type AuthContextType = {
   user: User | null;
@@ -101,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('user_balances')
           .insert({
             user_id: user.id,
-            balance: 20, // Give 20 free messages to new users
+            balance: MESSAGE_LIMITS.NEW_USER_INITIAL_BALANCE,
             mood_checkins_remaining: 10, // Give 10 free mood check-ins
             updated_at: new Date().toISOString(),
           });

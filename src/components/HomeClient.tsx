@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import SimplifiedHero from '@/components/SimplifiedHero';
+import ProblemAgitate from '@/components/ProblemAgitate';
+import Testimonials from '@/components/Testimonials';
+import ExitIntentPopup from '@/components/ExitIntentPopup';
 import Footer from '@/components/Footer';
 import ProfileSettings from '@/components/ProfileSettings';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -239,6 +242,12 @@ export default function HomeClient() {
         <SimplifiedHero onUpgrade={handleBuyPlus} />
       )}
 
+      {/* Problem-Agitate Section - for all users */}
+      {!loading && <ProblemAgitate />}
+
+      {/* Testimonials Section - for all users */}
+      {!loading && <Testimonials />}
+
       {/* Signed-in extras below hero - Service Cards only */}
       {!loading && user && (
         <>
@@ -288,6 +297,9 @@ export default function HomeClient() {
 
       {/* Modals */}
       <ProfileSettings isOpen={showProfileSettings} onClose={() => setShowProfileSettings(false)} />
+
+      {/* Exit Intent Popup - Global */}
+      <ExitIntentPopup />
     </main>
   );
 }

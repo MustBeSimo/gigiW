@@ -1,3 +1,4 @@
+
 # Mind Gleam — Global Compliance Blueprint
 
 *Version 0.1  (Last updated: 13 July 2025)*

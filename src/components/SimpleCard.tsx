@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/contexts/ThemeContext';
 import { AvatarId, getAvatarClasses } from '@/utils/avatarThemes';
 import { mindgleamGradients, getAvatarColors } from '@/utils/colors';
 
@@ -23,8 +23,8 @@ export default function SimpleCard({
   avatarId,
 }: SimpleCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDarkMode } = useTheme();
+  const isDark = isDarkMode;
 
   // Get avatar-specific colors if avatarId is provided
   const avatarClasses = avatarId ? getAvatarClasses(avatarId, isDark) : null;

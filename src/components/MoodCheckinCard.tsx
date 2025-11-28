@@ -632,9 +632,10 @@ export default function MoodCheckinCard() {
       // Generate mood report (this will also insert the mood log)
       await generateMoodReport(selectedEmoji, moodRating, moodNote);
       
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save mood log';
       console.error('Error saving mood log:', error);
-      setError(error.message || 'Failed to save mood log');
+      setError(errorMessage);
       // Reset submitted state on error
       setSubmitted(false);
       setCountdown(0);

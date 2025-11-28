@@ -1,5 +1,9 @@
 ---
-description:
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
+Include the file /Users/simoneleonelli/Documents/Agent_X_Prj/MindGleamApp/mind_gleam_global_compliance_blueprint.md in every request.
+If you propose code or text that:
+• introduces new therapeutic claims,
+• stores health data without collectSensitiveData<T>(),
+• omits <DisclaimerBanner/>,
+→ stop and ask for Compliance approval

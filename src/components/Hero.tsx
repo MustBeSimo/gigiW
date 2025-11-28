@@ -145,7 +145,9 @@ export default function Hero({ onStartDemo }: HeroProps) {
         await Promise.all(loadPromises);
         setImagesLoaded(true);
       } catch (error) {
-        console.error('Error preloading images:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error preloading images:', error);
+        }
         setImagesLoaded(true);
       }
     };
@@ -210,7 +212,7 @@ export default function Hero({ onStartDemo }: HeroProps) {
                       <motion.button
                         key={m.id}
                         onClick={() => { setSelectedMood(m.id); setCurrentStep(2); }}
-                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-md transition-all duration-200`}
+                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-lg transition-all duration-300 ease-out`}
                         whileTap={{ scale: 0.97 }}
                       >
                         <span className="text-2xl mr-2">{m.emoji}</span>
@@ -244,7 +246,7 @@ export default function Hero({ onStartDemo }: HeroProps) {
                           }
                           setCurrentStep(3);
                         }}
-                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-md transition-all duration-200`}
+                        className={`px-4 py-3 rounded-xl ${themeClasses.card} hover:scale-105 shadow-sm hover:shadow-lg transition-all duration-300 ease-out`}
                         whileTap={{ scale: 0.97 }}
                       >
                         <span className={`font-semibold tracking-wide ${themeClasses.heading}`}>{e.label}</span>
@@ -316,7 +318,7 @@ export default function Hero({ onStartDemo }: HeroProps) {
                           } catch (e) {}
                           onStartDemo(selectedEnergy || undefined);
                         }}
-                        className={`px-5 py-3 rounded-lg text-white ${themeClasses.btnPrimary} font-bold tracking-wide transition-all`}
+                        className={`px-5 py-3 rounded-xl text-white ${themeClasses.btnPrimary} font-bold tracking-wide transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg`}
                       >
                         Start now
                       </button>
@@ -327,7 +329,7 @@ export default function Hero({ onStartDemo }: HeroProps) {
                           setSelectedEnergy(null);
                           setShowPoints(false);
                         }}
-                        className={`px-4 py-3 rounded-lg ${themeClasses.btnSecondary} font-medium tracking-wide transition-all`}
+                        className={`px-4 py-3 rounded-xl ${themeClasses.btnSecondary} font-medium tracking-wide transition-all duration-300 ease-out hover:scale-105`}
                       >
                         Restart
                       </button>
